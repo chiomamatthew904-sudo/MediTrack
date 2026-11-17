@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { useProfile } from '../../context/profilecontext';
+import { Outlet, NavLink, useNavigate, Navigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   Settings,
@@ -9,7 +10,9 @@ import {
   X,
   ChevronDown,
   User,
-  ShieldAlert
+  ShieldAlert,
+  Sun,
+  Moon
 } from 'lucide-react';
 import medimg from '../../assets/medimg.jpg';
 
@@ -17,13 +20,35 @@ export default function AdminLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const navigate = useNavigate();
+  const { profile, loading, logoutUser, updateTheme } = useProfile();
+  
+if (loading) {
+  return <div>Verifying administrator access...</div>;
+}
 
-  const handleLogout = (e) => {
-    e.preventDefault();
-    if (window.confirm("Are you sure you want to log out of MediTrack Admin?")) {
-      navigate('/');
-    }
-  };
+if (!profile?.id || profile.role?.trim().toLowerCase() !== 'admin') {
+  return <Navigate to="/login" replace />;
+}
+
+   const handleLogout = async (e) => {
+  e.preventDefault();
+
+  if (window.confirm("Are you sure you want to log out of MediTrack Admin?")) {
+    await logoutUser();
+    navigate('/login', { replace: true });
+  }
+};
+
+
+  const handleThemeToggle = async () => {
+  const newTheme = profile.theme === 'dark' ? 'light' : 'dark';
+
+  const result = await updateTheme(newTheme);
+
+  if (!result.success) {
+    alert(result.error || 'Unable to change theme.');
+  }
+};
 
   return (
     <div className={`mt-admin-wrapper ${!isSidebarOpen ? 'collapsed' : ''}`}>
@@ -76,11 +101,24 @@ export default function AdminLayout() {
             </button>
           </div>
 
-          <div className="mt-topbar-right">
-            <button className="mt-admin-icon-btn" title="Notifications" onClick={() => navigate('/admin/management')}>
-              <Bell size={20} />
-              <span className="mt-admin-badge-count">3</span>
-            </button>
+            <div className="mt-topbar-right">
+  <button
+    className="mt-admin-icon-btn"
+    title={profile.theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+    aria-label="Toggle Theme"
+    onClick={handleThemeToggle}
+  >
+    {profile.theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+  </button>
+
+  <button
+    className="mt-admin-icon-btn"
+    title="Notifications"
+    onClick={() => navigate('/admin/management')}
+  >
+    <Bell size={20} />
+  </button>
+</div>
 
             <div className="mt-admin-profile-menu-wrap">
               <div 
@@ -112,7 +150,6 @@ export default function AdminLayout() {
                 </div>
               )}
             </div>
-          </div>
         </header>
 
         {/* PAGE OUTLET */}
@@ -263,11 +300,20 @@ export default function AdminLayout() {
           background: #E2E8F0;
         }
 
-        .mt-topbar-right {
-          display: flex;
-          align-items: center;
-          gap: 20px;
+        .mt-topbar-left {
+         display: flex;
+         align-items: center;
+         flex: 1;
         }
+
+        .mt-topbar-right {
+         display: flex;
+         align-items: center;
+         justify-content: flex-end;
+         gap: 20px;
+         margin-left: auto;
+         flex-shrink: 0;
+       }
         .mt-admin-icon-btn {
           position: relative;
           background: #F8FAFC;
@@ -398,6 +444,127 @@ export default function AdminLayout() {
           flex: 1;
           padding: 32px;
         }
+
+
+
+        /* ==================================
+   DARK MODE - ADMIN LAYOUT
+================================== */
+
+
+/* Main wrapper and content */
+html[data-theme="dark"] .mt-admin-wrapper {
+background: #102222;
+color: #E2E8F0;
+}
+
+html[data-theme="dark"] .mt-admin-main,
+html[data-theme="dark"] .mt-admin-content {
+background: #102222;
+color: #E2E8F0;
+}
+
+/* Sidebar */
+html[data-theme="dark"] .mt-admin-sidebar {
+background: #172B2B;
+border-right-color: #294343;
+}
+
+html[data-theme="dark"] .mt-admin-logo-container,
+html[data-theme="dark"] .mt-admin-sidebar-footer {
+border-color: #294343;
+}
+
+html[data-theme="dark"] .mt-admin-tagline {
+color: #A7B8B8;
+}
+
+/* Sidebar navigation */
+html[data-theme="dark"] .mt-admin-nav-item {
+color: #CBD5E1;
+}
+
+html[data-theme="dark"] .mt-admin-nav-item:hover {
+background: #203838;
+color: #5EEAD4;
+}
+
+html[data-theme="dark"] .mt-admin-nav-item.active {
+background: #0D9488;
+color: #FFFFFF;
+}
+
+/* Logout */
+html[data-theme="dark"] .mt-admin-logout-btn:hover {
+background: #3B2025;
+}
+
+/* Top navigation */
+html[data-theme="dark"] .mt-admin-topbar {
+background: #172B2B;
+border-bottom-color: #294343;
+}
+
+html[data-theme="dark"] .mt-admin-toggle-btn,
+html[data-theme="dark"] .mt-admin-icon-btn,
+html[data-theme="dark"] .mt-admin-profile-trigger {
+background: #203838;
+border-color: #345050;
+color: #CBD5E1;
+}
+
+html[data-theme="dark"] .mt-admin-toggle-btn:hover,
+html[data-theme="dark"] .mt-admin-icon-btn:hover,
+html[data-theme="dark"] .mt-admin-profile-trigger:hover {
+background: #294343;
+color: #5EEAD4;
+}
+
+/* Admin profile */
+html[data-theme="dark"] .mt-admin-name {
+color: #F1F5F9;
+}
+
+html[data-theme="dark"] .mt-chevron {
+color: #A7B8B8;
+}
+
+/* Profile dropdown */
+html[data-theme="dark"] .mt-admin-dropdown {
+background: #172B2B;
+border-color: #345050;
+}
+
+html[data-theme="dark"] .mt-dropdown-header {
+background: #203838;
+border-bottom-color: #345050;
+}
+
+html[data-theme="dark"] .mt-dropdown-user-name {
+color: #F1F5F9;
+}
+
+html[data-theme="dark"] .mt-dropdown-user-role {
+color: #5EEAD4;
+}
+
+html[data-theme="dark"] .mt-admin-dropdown li {
+color: #CBD5E1;
+}
+
+html[data-theme="dark"] .mt-admin-dropdown li:hover {
+background: #294343;
+color: #5EEAD4;
+}
+
+html[data-theme="dark"] .mt-admin-dropdown li.logout-item {
+color: #F87171;
+}
+
+html[data-theme="dark"] .mt-admin-dropdown li.logout-item:hover {
+background: #3B2025;
+}
+
 
         @media (max-width: 768px) {
           .mt-admin-sidebar { transform: translateX(-100%); }

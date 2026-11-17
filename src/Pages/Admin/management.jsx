@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Users,
   Calendar,
@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   Clock
 } from 'lucide-react';
+import { supabase } from '../../supabaseClient';
 
 export default function Management() {
   // Active Tab State: 'patients' | 'appointments' | 'enquiries'
@@ -32,46 +33,126 @@ export default function Management() {
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [selectedEnquiry, setSelectedEnquiry] = useState(null);
 
+  // Enquiry Reply States
+  const [replyMessage, setReplyMessage] = useState('');
+  const [sendingReply, setSendingReply] = useState(false);
+
   // Pagination States per Tab
   const [patientPage, setPatientPage] = useState(1);
   const [appointmentPage, setAppointmentPage] = useState(1);
   const [enquiryPage, setEnquiryPage] = useState(1);
   const rowsPerPage = 5;
 
-  // --- SAMPLE DATA ---
-  const [patientsData, setPatientsData] = useState([
-    { id: 1, name: 'Mary Johnson', email: 'mary.johnson@email.com', phone: '0803 123 4567', regDate: '18 Nov 2026', status: 'Active' },
-    { id: 2, name: 'David Okafor', email: 'david.okafor@email.com', phone: '0806 987 6543', regDate: '17 Nov 2026', status: 'Active' },
-    { id: 3, name: 'Blessing Eze', email: 'blessing.eze@email.com', phone: '0703 222 1111', regDate: '15 Nov 2026', status: 'Active' },
-    { id: 4, name: 'Chinedu Nwosu', email: 'chinedu.nwosu@email.com', phone: '0812 345 6789', regDate: '14 Nov 2026', status: 'Pending' },
-    { id: 5, name: 'Adaobi Uche', email: 'adaobi.uche@email.com', phone: '0809 876 5432', regDate: '13 Nov 2026', status: 'Active' },
-    { id: 6, name: 'Emeka Dike', email: 'emeka.dike@email.com', phone: '0802 111 2233', regDate: '11 Nov 2026', status: 'Active' },
-    { id: 7, name: 'Chisom Ani', email: 'chisom.ani@email.com', phone: '0814 555 6677', regDate: '10 Nov 2026', status: 'Active' },
-  ]);
 
-  const [appointmentsData, setAppointmentsData] = useState([
-    { id: 1, name: 'Mary Johnson', clinic: 'General Hospital', reason: 'General Health Checkup', date: '20 Nov 2026', time: '10:30 AM', status: 'Upcoming' },
-    { id: 2, name: 'David Okafor', clinic: 'City Medical Centre', reason: 'Blood Test Follow-up', date: '18 Nov 2026', time: '2:00 PM', status: 'Completed' },
-    { id: 3, name: 'Blessing Eze', clinic: 'General Hospital', reason: 'Dermatology Consultation', date: '15 Nov 2026', time: '9:00 AM', status: 'Missed' },
-    { id: 4, name: 'Chinedu Nwosu', clinic: 'St. Joseph Hospital', reason: 'Cardiology Review', date: '12 Nov 2026', time: '11:00 AM', status: 'Cancelled' },
-    { id: 5, name: 'Adaobi Uche', clinic: 'City Medical Centre', reason: 'Annual Physical', date: '10 Nov 2026', time: '3:30 PM', status: 'Completed' },
-  ]);
+  // Fetch real management data from the backend
+const fetchManagementData = async () => {
+  try {
+    const {
+      data: { session },
+      error: sessionError
+    } = await supabase.auth.getSession();
 
-  const [enquiriesData, setEnquiriesData] = useState([
-    { id: 1, sender: 'Jane Doe', email: 'jane.doe@email.com', subject: 'General Inquiry', message: 'Hello, I need assistance regarding how to update my registered phone number on my patient profile.', date: '18 Nov 2026, 1:20 PM', status: 'New' },
-    { id: 2, sender: 'Michael Okafor', email: 'michael.o@email.com', subject: 'Appointment Help', message: 'Can a patient reschedule an appointment after it has been marked as upcoming?', date: '17 Nov 2026, 4:15 PM', status: 'Read' },
-    { id: 3, sender: 'Faith Uche', email: 'faith.u@email.com', subject: 'Feedback', message: 'The platform interface is very clean and easy to navigate. Great work!', date: '16 Nov 2026, 9:30 AM', status: 'Replied' },
-    { id: 4, sender: 'David Eze', email: 'david.eze@email.com', subject: 'Technical Support', message: 'I am experiencing trouble loading my notification history page on mobile view.', date: '14 Nov 2026, 2:45 PM', status: 'New' },
-    { id: 5, sender: 'Grace Nwosu', email: 'grace.n@email.com', subject: 'Billing Question', message: 'Are consultations scheduled through MediTrack charged directly or at the hospital?', date: '12 Nov 2026, 11:10 AM', status: 'Read' },
-  ]);
+    if (sessionError || !session) {
+      throw new Error('Please log in again to continue.');
+    }
+
+    const response = await fetch(
+      'http://localhost:5000/api/admin/management',
+      {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      throw new Error(
+        result.message || 'Unable to fetch management data.'
+      );
+    }
+
+    // Convert database records to the format used by the existing tables
+    setPatientsData(
+      (result.patients || []).map(patient => ({
+        id: patient.id,
+        name: patient.full_name || 'Unnamed Patient',
+        email: patient.email || '—',
+        phone: patient.phone || '—',
+        regDate: patient.created_at
+          ? new Date(patient.created_at).toLocaleDateString('en-NG', {
+              day: '2-digit',
+              month: 'short',
+              year: 'numeric',
+              timeZone: 'Africa/Lagos'
+            })
+          : '—',
+        status: 'Active'
+      }))
+    );
+
+    setAppointmentsData(
+      (result.appointments || []).map(appointment => ({
+        id: appointment.id,
+        name: appointment.patient_name || 'Unknown Patient',
+        clinic: appointment.facility_name || '—',
+        reason: appointment.reason || '—',
+        date: appointment.appointment_date || '—',
+        time: appointment.appointment_time || '—',
+        status: appointment.status || 'Upcoming'
+      }))
+    );
+
+    setEnquiriesData(
+      (result.enquiries || []).map(enquiry => ({
+        id: enquiry.id,
+        sender: enquiry.full_name || 'Unknown Sender',
+        email: enquiry.email || '—',
+        subject: enquiry.subject || '—',
+        message: enquiry.message || '—',
+        date: enquiry.created_at
+          ? new Date(enquiry.created_at).toLocaleString('en-NG', {
+              day: '2-digit',
+              month: 'short',
+              year: 'numeric',
+              hour: 'numeric',
+              minute: '2-digit',
+              timeZone: 'Africa/Lagos'
+            })
+          : '—',
+       status: enquiry.status
+       ? enquiry.status.charAt(0).toUpperCase() + enquiry.status.slice(1).toLowerCase()
+       : 'New'
+      }))
+    );
+
+  } catch (error) {
+    console.error('Management data error:', error.message);
+    alert(error.message);
+  }
+};
+
+
+// Fetch management data when the page loads
+useEffect(() => {
+  fetchManagementData();
+}, []);
+
+
+  // Data retrieved from Supabase
+  const [patientsData, setPatientsData] = useState([]);
+  const [appointmentsData, setAppointmentsData] = useState([]);
+  const [enquiriesData, setEnquiriesData] = useState([]);
 
   // Current Date formatted for top right
-  const currentDateFormatted = new Date().toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
+  const currentDateFormatted = new Date().toLocaleDateString('en-NG', {
+  timeZone: 'Africa/Lagos',
+  weekday: 'long',
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric'
+});
 
   // --- FILTER & PAGINATION LOGIC: PATIENTS ---
   const filteredPatients = patientsData.filter(p => {
@@ -104,19 +185,126 @@ export default function Management() {
   const currentEnquiries = filteredEnquiries.slice(enquiryStartIndex, enquiryStartIndex + rowsPerPage);
 
   // --- ACTIONS FOR ENQUIRIES ---
-  const handleMarkAsRead = (id) => {
-    setEnquiriesData(enquiriesData.map(e => e.id === id ? { ...e, status: 'Read' } : e));
-    if (selectedEnquiry && selectedEnquiry.id === id) {
-      setSelectedEnquiry({ ...selectedEnquiry, status: 'Read' });
-    }
-  };
+const updateEnquiryStatus = async (id, status) => {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
 
-  const handleMarkAsReplied = (id) => {
-    setEnquiriesData(enquiriesData.map(e => e.id === id ? { ...e, status: 'Replied' } : e));
-    if (selectedEnquiry && selectedEnquiry.id === id) {
-      setSelectedEnquiry({ ...selectedEnquiry, status: 'Replied' });
+    if (!session) {
+      throw new Error('Your admin session has expired. Please log in again.');
     }
-  };
+
+    const response = await fetch(
+      `http://localhost:5000/api/admin/enquiries/${id}/status`,
+      {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ status })
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      throw new Error(result.message || 'Unable to update enquiry.');
+    }
+
+   // Convert database status to dashboard display format
+  const displayStatus =
+  result.enquiry.status.charAt(0).toUpperCase() +
+  result.enquiry.status.slice(1).toLowerCase();
+
+// Update the enquiry list
+setEnquiriesData(prev =>
+  prev.map(e =>
+    e.id === id ? { ...e, status: displayStatus } : e
+  )
+);
+
+// Update the selected enquiry if it is currently open
+setSelectedEnquiry(prev =>
+  prev?.id === id
+    ? { ...prev, status: displayStatus }
+    : prev
+); 
+
+  } catch (error) {
+    console.error('Error updating enquiry:', error);
+    alert(error.message || 'Unable to update enquiry status.');
+  }
+};
+
+const handleMarkAsRead = (id) => {
+  updateEnquiryStatus(id, 'read');
+};
+
+
+const handleSendReply = async () => {
+  if (!replyMessage.trim()) {
+    alert('Please enter a reply message.');
+    return;
+  }
+
+  try {
+    setSendingReply(true);
+
+    const { data: { session }, error } = await supabase.auth.getSession();
+
+    if (error || !session) {
+      throw new Error('Please log in again.');
+    }
+
+    const response = await fetch(
+      `http://localhost:5000/api/admin/enquiries/${selectedEnquiry.id}/reply`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          message: replyMessage.trim()
+        })
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      throw new Error(result.message || 'Unable to send reply.');
+    }
+
+    setEnquiriesData(prev =>
+      prev.map(enquiry =>
+        enquiry.id === selectedEnquiry.id
+          ? { ...enquiry, status: 'Replied' }
+          : enquiry
+      )
+    );
+
+    setSelectedEnquiry(prev => ({
+      ...prev,
+      status: 'Replied'
+    }));
+
+    setReplyMessage('');
+
+    alert('Reply sent successfully!');
+
+  } catch (error) {
+    console.error('Reply error:', error);
+    alert(error.message);
+  } finally {
+    setSendingReply(false);
+  }
+};
+
+
+const handleMarkAsReplied = (id) => {
+  updateEnquiryStatus(id, 'replied');
+};
 
   return (
     <div className="mt-management-container">
@@ -608,6 +796,33 @@ export default function Management() {
                 <p className="mt-message-title">Message Content:</p>
                 <p className="mt-message-text">{selectedEnquiry.message}</p>
               </div>
+
+               
+<div className="mt-reply-section">
+  <label htmlFor="enquiry-reply" className="mt-message-title">
+    Write Your Reply:
+  </label>
+
+  <textarea
+    id="enquiry-reply"
+    className="mt-reply-textarea"
+    value={replyMessage}
+    onChange={(e) => setReplyMessage(e.target.value)}
+    placeholder="Write your response to this enquiry..."
+    rows={5}
+    disabled={sendingReply}
+  />
+
+  <button
+    type="button"
+    className="mt-btn-action-replied"
+    onClick={handleSendReply}
+    disabled={sendingReply || !replyMessage.trim()}
+  >
+    {sendingReply ? 'Sending...' : 'Send Reply'}
+  </button>
+</div>
+
             </div>
             <div className="mt-modal-footer enquiry-footer">
               <div className="mt-footer-action-left">
@@ -616,11 +831,7 @@ export default function Management() {
                     Mark as Read
                   </button>
                 )}
-                {selectedEnquiry.status !== 'Replied' && (
-                  <button className="mt-btn-action-replied" onClick={() => handleMarkAsReplied(selectedEnquiry.id)}>
-                    Mark as Replied
-                  </button>
-                )}
+                
               </div>
               <button className="mt-btn-secondary" onClick={() => setSelectedEnquiry(null)}>Close</button>
             </div>
@@ -1002,6 +1213,54 @@ export default function Management() {
           border-radius: 10px;
           margin-top: 4px;
         }
+
+/* Enquiry Email Reply Section */
+.mt-reply-section {
+  margin-top: 24px;
+  padding: 18px;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mt-reply-textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 12px 14px;
+  border: 1px solid #CBD5E1;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  resize: vertical;
+  outline: none;
+  background: #FFFFFF;
+  color: #334155;
+  box-sizing: border-box;
+}
+
+.mt-reply-textarea:focus {
+  border-color: #0D9488;
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1);
+}
+
+.mt-reply-textarea:disabled {
+  background: #F1F5F9;
+  cursor: not-allowed;
+}
+
+.mt-reply-section .mt-btn-action-replied {
+  align-self: flex-end;
+}
+
+.mt-reply-section .mt-btn-action-replied:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+ 
         .mt-message-title {
           font-size: 12px;
           font-weight: 600;
@@ -1058,6 +1317,202 @@ export default function Management() {
           font-weight: 600;
           cursor: pointer;
         }
+
+
+                /* ==================================
+           DARK MODE - ADMIN MANAGEMENT
+        ================================== */
+
+        html[data-theme="dark"] .mt-management-container {
+          color: #E2E8F0;
+        }
+
+        /* Welcome banner and cards */
+        html[data-theme="dark"] .mt-welcome-card,
+        html[data-theme="dark"] .mt-card {
+          background: #172B2B;
+          border-color: #294343;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        html[data-theme="dark"] .mt-welcome-left h1,
+        html[data-theme="dark"] .mt-card-top-controls h3 {
+          color: #F1F5F9;
+        }
+
+        html[data-theme="dark"] .mt-welcome-left p,
+        html[data-theme="dark"] .mt-section-subtitle,
+        html[data-theme="dark"] .mt-pagination-info {
+          color: #A7B8B8;
+        }
+
+        html[data-theme="dark"] .mt-welcome-right {
+          background: #203838;
+          border-color: #345050;
+          color: #E2E8F0;
+        }
+
+        html[data-theme="dark"] .mt-shield-icon-wrap {
+          background: #203F3B;
+        }
+
+        /* Tabs */
+        html[data-theme="dark"] .mt-tabs-bar {
+          border-color: #294343;
+        }
+
+        html[data-theme="dark"] .mt-tab-btn {
+          background: #172B2B;
+          border-color: #345050;
+          color: #A7B8B8;
+        }
+
+        html[data-theme="dark"] .mt-tab-btn:hover {
+          background: #203838;
+          color: #5EEAD4;
+        }
+
+        html[data-theme="dark"] .mt-tab-btn.active {
+          background: #0D9488;
+          border-color: #0D9488;
+          color: #FFFFFF;
+        }
+
+        /* Search, filters and refresh */
+        html[data-theme="dark"] .mt-search-box,
+        html[data-theme="dark"] .mt-filter-select,
+        html[data-theme="dark"] .mt-refresh-btn {
+          background: #203838;
+          border-color: #345050;
+          color: #E2E8F0;
+        }
+
+        html[data-theme="dark"] .mt-search-box input {
+          color: #F1F5F9;
+        }
+
+        html[data-theme="dark"] .mt-search-box input::placeholder {
+          color: #8FA5A5;
+        }
+
+        html[data-theme="dark"] .mt-filter-select option {
+          background: #172B2B;
+          color: #E2E8F0;
+        }
+
+        html[data-theme="dark"] .mt-refresh-btn:hover {
+          background: #294343;
+        }
+
+        /* Tables */
+        html[data-theme="dark"] .mt-table th {
+          background: #203838;
+          color: #A7B8B8;
+          border-bottom-color: #345050;
+        }
+
+        html[data-theme="dark"] .mt-table td {
+          color: #CBD5E1;
+          border-bottom-color: #294343;
+        }
+
+        html[data-theme="dark"] .mt-table tr:hover td {
+          background: #203838;
+        }
+
+        html[data-theme="dark"] .font-semibold {
+          color: #F1F5F9;
+        }
+
+        html[data-theme="dark"] .text-muted {
+          color: #A7B8B8;
+        }
+
+        html[data-theme="dark"] .mt-empty-row {
+          color: #A7B8B8;
+        }
+
+        /* Pagination */
+        html[data-theme="dark"] .mt-pagination-footer {
+          border-top-color: #294343;
+        }
+
+        html[data-theme="dark"] .mt-page-num,
+        html[data-theme="dark"] .mt-page-arrow {
+          background: #203838;
+          border-color: #345050;
+          color: #CBD5E1;
+        }
+
+        html[data-theme="dark"] .mt-page-num:hover:not(.active) {
+          background: #294343;
+        }
+
+        html[data-theme="dark"] .mt-page-num.active {
+          background: #0D9488;
+          border-color: #0D9488;
+          color: #FFFFFF;
+        }
+
+        /* Modals */
+        html[data-theme="dark"] .mt-modal-card {
+          background: #172B2B;
+        }
+
+        html[data-theme="dark"] .mt-modal-header,
+        html[data-theme="dark"] .mt-modal-footer {
+          background: #203838;
+          border-color: #345050;
+        }
+
+        html[data-theme="dark"] .mt-modal-header h3 {
+          color: #F1F5F9;
+        }
+
+        html[data-theme="dark"] .mt-modal-close {
+          color: #A7B8B8;
+        }
+
+        html[data-theme="dark"] .mt-detail-label,
+        html[data-theme="dark"] .mt-message-title {
+          color: #A7B8B8;
+        }
+
+        html[data-theme="dark"] .mt-detail-val,
+        html[data-theme="dark"] .mt-message-text {
+          color: #E2E8F0;
+        }
+
+        html[data-theme="dark"] .mt-message-box,
+        html[data-theme="dark"] .mt-reply-section {
+          background: #203838;
+          border-color: #345050;
+        }
+
+        html[data-theme="dark"] .mt-reply-textarea {
+          background: #102222;
+          border-color: #456060;
+          color: #F1F5F9;
+        }
+
+        html[data-theme="dark"] .mt-reply-textarea::placeholder {
+          color: #8FA5A5;
+        }
+
+        html[data-theme="dark"] .mt-reply-textarea:disabled {
+          background: #294343;
+        }
+
+        html[data-theme="dark"] .mt-btn-secondary {
+          background: #203838;
+          border-color: #456060;
+          color: #E2E8F0;
+        }
+
+        html[data-theme="dark"] .mt-btn-secondary:hover {
+          background: #294343;
+        }
+
 
         @media (max-width: 768px) {
           .mt-card-top-controls {

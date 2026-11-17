@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { supabase } from '../supabaseClient';
 import {
   X,
   Menu,
@@ -32,6 +33,7 @@ export default function Contact() {
   const [errors, setErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState('');
   const [openFaqIndex, setOpenFaqIndex] = useState(null);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const toggleFaq = (index) => {
     setOpenFaqIndex(openFaqIndex === index ? null : index);
@@ -59,18 +61,67 @@ export default function Contact() {
     return newErrors;
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const validationErrors = validateForm();
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      setSuccessMessage('');
-    } else {
-      setErrors({});
-      setSuccessMessage('Thank you! Your message has been sent successfully. We will get back to you soon.');
-      setFormData({ fullName: '', email: '', subject: '', message: '' });
+   
+const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  const validationErrors = validateForm();
+
+  if (Object.keys(validationErrors).length > 0) {
+    setErrors(validationErrors);
+    setSuccessMessage('');
+    setErrorMessage('');
+    return;
+  }
+
+  setErrors({});
+  setSuccessMessage('');
+  setErrorMessage('');
+
+  try {
+    
+    const { data: { session } } = await supabase.auth.getSession();
+
+   const response = await fetch(
+  'http://localhost:5000/api/contact-enquiries',
+  {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(session?.access_token
+        ? { Authorization: `Bearer ${session.access_token}` }
+        : {})
+    },
+    body: JSON.stringify(formData),
+  }
+);
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      throw new Error(result.message || 'Unable to send your message.');
     }
-  };
+
+    setSuccessMessage(
+      'Thank you! Your message has been sent successfully. We will get back to you soon.'
+    );
+
+    setFormData({
+      fullName: '',
+      email: '',
+      subject: '',
+      message: '',
+    });
+
+  } catch (error) {
+    console.error('Contact form submission error:', error);
+
+    setErrorMessage(
+      error.message || 'Something went wrong. Please try again.'
+    );
+  }
+};
+
 
   const faqs = [
     {
@@ -870,6 +921,173 @@ export default function Contact() {
         .heart-icon {
           color: #FF4D4D;
         }
+
+
+
+/* ==================================
+   DARK MODE - CONTACT PAGE
+================================== */
+
+html[data-theme="dark"] .contact-page-wrapper {
+  background: #102222;
+  color: #E2E8F0;
+}
+
+/* Navigation */
+html[data-theme="dark"] .contact-page-wrapper .navbar {
+  background: #172B2B;
+  border-bottom-color: #294343;
+}
+
+html[data-theme="dark"] .contact-page-wrapper .nav-links a,
+html[data-theme="dark"] .contact-page-wrapper .mobile-dropdown-menu a {
+  color: #CBD5E1;
+}
+
+html[data-theme="dark"] .contact-page-wrapper .nav-links a:hover,
+html[data-theme="dark"] .contact-page-wrapper .nav-links a.active {
+  color: #5EEAD4;
+}
+
+html[data-theme="dark"] .contact-page-wrapper .mobile-menu-btn {
+  color: #E2E8F0;
+}
+
+html[data-theme="dark"] .contact-page-wrapper .mobile-dropdown-menu {
+  background: #172B2B;
+  border-bottom-color: #294343;
+}
+
+html[data-theme="dark"] .contact-page-wrapper .btn-get-started,
+html[data-theme="dark"] .contact-page-wrapper .btn-primary-pill,
+html[data-theme="dark"] .contact-page-wrapper .btn-submit {
+  background: #0D9488;
+}
+
+/* Hero */
+html[data-theme="dark"] .contact-page-wrapper .contact-hero,
+html[data-theme="dark"] .contact-page-wrapper .info-cards-section,
+html[data-theme="dark"] .contact-page-wrapper .contact-form-section,
+html[data-theme="dark"] .contact-page-wrapper .additional-help-section {
+  background: #102222;
+}
+
+html[data-theme="dark"] .contact-page-wrapper .hero-title,
+html[data-theme="dark"] .contact-page-wrapper .section-heading,
+html[data-theme="dark"] .contact-page-wrapper .info-card-content h3,
+html[data-theme="dark"] .contact-page-wrapper .form-group label {
+  color: #F1F5F9;
+}
+
+html[data-theme="dark"] .contact-page-wrapper .hero-desc,
+html[data-theme="dark"] .contact-page-wrapper .form-subtext,
+html[data-theme="dark"] .contact-page-wrapper .info-card-content p {
+  color: #A7B8B8;
+}
+
+html[data-theme="dark"] .contact-page-wrapper .badge-pill {
+  background: #164E45;
+  color: #5EEAD4;
+}
+
+/* Information cards */
+html[data-theme="dark"] .contact-page-wrapper .info-card {
+  background: #172B2B;
+  border-color: #294343;
+}
+
+html[data-theme="dark"] .contact-page-wrapper .info-icon-circle {
+  background: #203F3B;
+}
+
+html[data-theme="dark"] .contact-page-wrapper .teal-icon {
+  color: #5EEAD4;
+}
+
+/* Contact form */
+html[data-theme="dark"] .contact-page-wrapper .form-group input,
+html[data-theme="dark"] .contact-page-wrapper .form-group select,
+html[data-theme="dark"] .contact-page-wrapper .form-group textarea {
+  background: #203838;
+  border-color: #345050;
+  color: #E2E8F0;
+}
+
+html[data-theme="dark"] .contact-page-wrapper .form-group input::placeholder,
+html[data-theme="dark"] .contact-page-wrapper .form-group textarea::placeholder {
+  color: #94A3B8;
+}
+
+html[data-theme="dark"] .contact-page-wrapper .form-group input:focus,
+html[data-theme="dark"] .contact-page-wrapper .form-group select:focus,
+html[data-theme="dark"] .contact-page-wrapper .form-group textarea:focus {
+  background: #294343;
+  border-color: #0D9488;
+}
+
+html[data-theme="dark"] .contact-page-wrapper .form-group select option {
+  background: #172B2B;
+  color: #E2E8F0;
+}
+
+html[data-theme="dark"] .contact-page-wrapper .success-alert {
+  background: #164E45;
+  border-color: #0D9488;
+  color: #99F6E4;
+}
+
+/* FAQ */
+html[data-theme="dark"] .contact-page-wrapper .faq-section {
+  background: #132B2A;
+}
+
+html[data-theme="dark"] .contact-page-wrapper .faq-subtext {
+  color: #A7B8B8;
+}
+
+html[data-theme="dark"] .contact-page-wrapper .faq-item {
+  background: #172B2B;
+  border-color: #345050;
+}
+
+html[data-theme="dark"] .contact-page-wrapper .faq-question-btn {
+  color: #F1F5F9;
+}
+
+html[data-theme="dark"] .contact-page-wrapper .faq-answer-panel {
+  color: #A7B8B8;
+  border-top-color: #345050;
+}
+
+/* Help banner */
+html[data-theme="dark"] .contact-page-wrapper .help-banner-card {
+  background: #0F766E;
+}
+
+/* Footer */
+html[data-theme="dark"] .contact-page-wrapper .footer-light {
+  background: linear-gradient(180deg, #172B2B 0%, #123D39 100%);
+}
+
+html[data-theme="dark"] .contact-page-wrapper .footer-divider {
+  background: #345050;
+}
+
+html[data-theme="dark"] .contact-page-wrapper .footer-socials a {
+  color: #CBD5E1;
+}
+
+html[data-theme="dark"] .contact-page-wrapper .footer-socials a:hover {
+  color: #5EEAD4;
+}
+
+html[data-theme="dark"] .contact-page-wrapper .footer-right {
+  color: #A7B8B8;
+}
+
+/* Keep validation errors and required-field indicators visible */
+
+
 
         @media (max-width: 992px) {
           .nav-links { display: none; }

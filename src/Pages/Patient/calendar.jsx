@@ -824,6 +824,142 @@ export default function AppointmentCalendar() {
         .badge-cancelled { background: #FEE2E2; color: #DC2626; }
         .badge-missed { background: #FEF3C7; color: #D97706; }
 
+
+/* ==================================
+   DARK MODE - APPOINTMENT CALENDAR
+================================== */
+
+html[data-theme="dark"] .calendar-page-container {
+  color: #E2E8F0;
+}
+
+/* Page header and calendar controls */
+html[data-theme="dark"] .page-header-section,
+html[data-theme="dark"] .calendar-controls-bar,
+html[data-theme="dark"] .calendar-card,
+html[data-theme="dark"] .selected-date-panel,
+html[data-theme="dark"] .upcoming-section-card {
+  background: #172B2B;
+  border-color: #294343;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+html[data-theme="dark"] .page-title,
+html[data-theme="dark"] .current-month-title,
+html[data-theme="dark"] .panel-date-header h3,
+html[data-theme="dark"] .panel-app-reason,
+html[data-theme="dark"] .card-header-flex h2,
+html[data-theme="dark"] .upcoming-details h4 {
+  color: #F1F5F9;
+}
+
+html[data-theme="dark"] .page-description,
+html[data-theme="dark"] .calendar-legend,
+html[data-theme="dark"] .weekday-header-row,
+html[data-theme="dark"] .panel-meta-row,
+html[data-theme="dark"] .upcoming-details span,
+html[data-theme="dark"] .no-upcoming-text {
+  color: #A7B8B8;
+}
+
+/* Calendar navigation */
+html[data-theme="dark"] .nav-arrow-btn {
+  background: #203838;
+  border-color: #345050;
+  color: #5EEAD4;
+}
+
+html[data-theme="dark"] .nav-arrow-btn:hover {
+  background: #294343;
+}
+
+html[data-theme="dark"] .calendar-cell {
+  background: #203838;
+  border-color: #345050;
+}
+
+html[data-theme="dark"] .calendar-cell:hover {
+  background: #294343;
+  border-color: #0D9488;
+}
+
+html[data-theme="dark"] .calendar-cell.outside-month {
+  background: #172B2B;
+}
+
+html[data-theme="dark"] .calendar-cell.today-cell {
+  background: #294343;
+  border-color: #5EEAD4;
+}
+
+html[data-theme="dark"] .cell-day-number {
+  color: #E2E8F0;
+}
+
+html[data-theme="dark"] .calendar-cell.selected-cell {
+  background: #087F6E !important;
+  border-color: #0D9488 !important;
+}
+
+html[data-theme="dark"] .more-indicator {
+  background: #294343;
+  color: #5EEAD4;
+}
+
+/* Selected date panel */
+html[data-theme="dark"] .panel-date-header {
+  border-bottom-color: #345050;
+  color: #5EEAD4;
+}
+
+html[data-theme="dark"] .panel-appointment-item,
+html[data-theme="dark"] .upcoming-item-card {
+  background: #203838;
+  border-color: #345050;
+}
+
+html[data-theme="dark"] .panel-action-buttons {
+  border-top-color: #345050;
+}
+
+html[data-theme="dark"] .view-action {
+  background: #164E45;
+  color: #5EEAD4;
+}
+
+html[data-theme="dark"] .edit-action {
+  background: #163B52;
+  color: #7DD3FC;
+}
+
+html[data-theme="dark"] .empty-icon {
+  color: #647878;
+}
+
+/* Upcoming appointments */
+html[data-theme="dark"] .header-icon-box {
+  background: #203F3B;
+  color: #5EEAD4;
+}
+
+html[data-theme="dark"] .view-all-link {
+  color: #5EEAD4;
+}
+
+html[data-theme="dark"] .view-all-link:hover {
+  color: #99F6E4;
+}
+
+/* Error message */
+html[data-theme="dark"] .calendar-error {
+  background: #451F24;
+  border-color: #7F3038;
+  color: #FCA5A5;
+}
+
+/* Keep status badges and primary action buttons readable */
+
+
         /* RESPONSIVE MOBILE MEDIA QUERY FIXES */
         @media (max-width: 992px) {
           .page-header-section {

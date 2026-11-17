@@ -63,46 +63,69 @@ export default function Login() {
     return newErrors;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const validationErrors = validateForm();
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      setSuccessMessage('');
+  
+const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  const validationErrors = validateForm();
+
+  if (Object.keys(validationErrors).length > 0) {
+    setErrors(validationErrors);
+    setSuccessMessage('');
+    return;
+  }
+
+  setErrors({});
+  setIsLoading(true);
+  setSuccessMessage('');
+
+  try {
+    // Sign in with Supabase
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: formData.email,
+      password: formData.password,
+    });
+
+    if (error) {
+      setErrors({ password: error.message });
+      setIsLoading(false);
       return;
     }
 
-    setErrors({});
-    setIsLoading(true);
-    setSuccessMessage('');
+    // Retrieve the user's actual role from the profiles table
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', data.user.id)
+      .maybeSingle();
 
-    try {
-      // Call Supabase sign in
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password,
-      });
-
-      if (error) {
-        setErrors({ password: error.message });
-        setIsLoading(false);
-        return;
-      }
-
-      setSuccessMessage('Login successful! Redirecting to dashboard...');
-      
-      // Short delay before navigating to dashboard
-      setTimeout(() => {
-        setIsLoading(false);
-        navigate('/dashboard');
-      }, 1000);
-
-    } catch (err) {
-      console.error('Unexpected error during login:', err);
-      setErrors({ password: 'An unexpected error occurred. Please try again.' });
+    if (profileError || !profile) {
+      await supabase.auth.signOut();
+      setErrors({ password: 'Unable to verify your account role. Please try again.' });
       setIsLoading(false);
+      return;
     }
-  };
+
+    // Redirect based on the user's role
+    const userRole = profile.role?.trim().toLowerCase();
+
+    const destination =
+      userRole === 'admin' ? '/admin/dashboard' : '/dashboard';
+
+    setSuccessMessage('Login successful! Redirecting...');
+
+    setTimeout(() => {
+      setIsLoading(false);
+      navigate(destination);
+    }, 1000);
+
+  } catch (err) {
+    console.error('Unexpected error during login:', err);
+    setErrors({ password: 'An unexpected error occurred. Please try again.' });
+    setIsLoading(false);
+  }
+};
+
 
   return (
     <div className="login-page-wrapper">
@@ -598,6 +621,130 @@ export default function Login() {
         .create-account-prompt a:hover {
           text-decoration: underline;
         }
+
+
+
+
+/* ==================================
+   DARK MODE - LOGIN PAGE
+================================== */
+
+html[data-theme="dark"] .login-page-wrapper {
+  background: #102222;
+}
+
+/* Main login container */
+html[data-theme="dark"] .login-split-container {
+  background: #172B2B;
+  border-color: #294343;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.25);
+}
+
+/* Keep the hero image and overlay unchanged */
+html[data-theme="dark"] .login-hero-section {
+  background-color: #123D39;
+}
+
+/* Login form section */
+html[data-theme="dark"] .login-form-section {
+  background: #172B2B;
+}
+
+html[data-theme="dark"] .sign-in-heading {
+  color: #F1F5F9;
+}
+
+html[data-theme="dark"] .sign-in-subtext {
+  color: #A7B8B8;
+}
+
+/* Form labels */
+html[data-theme="dark"] .form-group label {
+  color: #E2E8F0;
+}
+
+/* Input fields */
+html[data-theme="dark"] .input-with-icon input {
+  background: #203838;
+  border-color: #345050;
+  color: #E2E8F0;
+}
+
+html[data-theme="dark"] .input-with-icon input::placeholder {
+  color: #94A3B8;
+}
+
+html[data-theme="dark"] .input-with-icon input:focus {
+  background: #294343;
+  border-color: #0D9488;
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+}
+
+html[data-theme="dark"] .input-prefix-icon {
+  color: #94A3B8;
+}
+
+html[data-theme="dark"] .password-toggle-btn {
+  color: #A7B8B8;
+}
+
+/* Remember me and forgot password */
+html[data-theme="dark"] .checkbox-label {
+  color: #CBD5E1;
+}
+
+html[data-theme="dark"] .checkbox-label input[type="checkbox"] {
+  accent-color: #0D9488;
+}
+
+html[data-theme="dark"] .forgot-password-link,
+html[data-theme="dark"] .create-account-prompt a {
+  color: #5EEAD4;
+}
+
+html[data-theme="dark"] .forgot-password-link:hover {
+  color: #99F6E4;
+}
+
+/* Sign-in button */
+html[data-theme="dark"] .btn-signin {
+  background: #0D9488;
+}
+
+html[data-theme="dark"] .btn-signin:hover {
+  background: #0F766E;
+}
+
+/* Divider */
+html[data-theme="dark"] .auth-divider {
+  color: #94A3B8;
+}
+
+html[data-theme="dark"] .auth-divider::before,
+html[data-theme="dark"] .auth-divider::after {
+  border-bottom-color: #345050;
+}
+
+html[data-theme="dark"] .auth-divider span {
+  background: #172B2B;
+}
+
+/* Create account prompt */
+html[data-theme="dark"] .create-account-prompt {
+  color: #A7B8B8;
+}
+
+/* Success message */
+html[data-theme="dark"] .success-alert {
+  background: #164E45;
+  border-color: #0D9488;
+  color: #99F6E4;
+}
+
+/* Preserve visible validation error colours */
+
+
+
 
         /* RESPONSIVE MEDIA QUERIES */
         @media (max-width: 992px) {

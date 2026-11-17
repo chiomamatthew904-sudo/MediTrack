@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../../supabaseClient';
 import {
   Users,
   Calendar,
@@ -17,53 +18,129 @@ import {
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      setError('');
+
+      const {
+        data: { session },
+        error: sessionError
+      } = await supabase.auth.getSession();
+
+      if (sessionError) {
+        throw sessionError;
+      }
+
+      if (!session) {
+        throw new Error('Your session has expired. Please log in again.');
+      }
+
+      const response = await fetch(
+        'http://localhost:5000/api/admin/dashboard',
+        {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`
+          }
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(
+          result.message || 'Unable to load dashboard data.'
+        );
+      }
+
+      setDashboardData(result);
+
+    } catch (err) {
+      console.error('Dashboard loading error:', err);
+      setError(err.message || 'Something went wrong while loading the dashboard.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchDashboardData();
+}, []);
+
+
+const recentActivity = [
+  ...(dashboardData?.recentPatients || []).map(patient => ({
+    id: `patient-${patient.id}`,
+    text: `${patient.full_name || 'A patient'} registered on MediTrack`,
+    date: patient.created_at,
+    label: 'P',
+    bg: '#e0f2f1'
+  })),
+
+  ...(dashboardData?.recentAppointments || []).map(appointment => ({
+    id: `appointment-${appointment.id}`,
+    text: `New appointment added for ${appointment.patient_name || 'a patient'}`,
+    date: appointment.created_at,
+    label: 'A',
+    bg: '#e3f2fd'
+  })),
+
+  ...(dashboardData?.recentEnquiries || []).map(enquiry => ({
+    id: `enquiry-${enquiry.id}`,
+    text: `New enquiry received from ${enquiry.full_name || 'a visitor'}`,
+    date: enquiry.created_at,
+    label: 'E',
+    bg: '#fff3e0'
+  }))
+]
+  .sort((a, b) => new Date(b.date) - new Date(a.date))
+  .slice(0, 5);
 
   // Current Date formatted for top right of welcome banner
-  const currentDateFormatted = new Date().toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
+   const currentDateFormatted = new Date().toLocaleDateString('en-NG', {
+  timeZone: 'Africa/Lagos',
+  weekday: 'long',
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric'
+});
 
   // Sample Data for Tables & Lists
   const stats = [
-    { title: 'Total Patients', count: '50', icon: <Users size={24} color="#0D9488" />, bg: '#CCFBF1', link: '/admin/management' },
-    { title: 'Total Appointments', count: '120', icon: <Calendar size={24} color="#3B82F6" />, bg: '#EFF6FF', link: '/admin/management' },
-    { title: 'Upcoming Appointments', count: '18', icon: <Clock size={24} color="#D97706" />, bg: '#FEF3C7', link: '/admin/management' },
-    { title: 'New Enquiries', count: '4', icon: <Mail size={24} color="#8B5CF6" />, bg: '#EDE9FE', link: '/admin/management' }
-  ];
+  {
+    title: 'Total Patients',
+    count: dashboardData?.statistics?.totalPatients ?? 0,
+    icon: <Users size={24} color="#0D9488" />,
+    bg: '#CCFBF1',
+    link: '/admin/management'
+  },
+  {
+    title: 'Total Appointments',
+    count: dashboardData?.statistics?.totalAppointments ?? 0,
+    icon: <Calendar size={24} color="#3B82F6" />,
+    bg: '#EFF6FF',
+    link: '/admin/management'
+  },
+  {
+    title: 'Upcoming Appointments',
+    count: dashboardData?.statistics?.upcomingAppointments ?? 0,
+    icon: <Clock size={24} color="#D97706" />,
+    bg: '#FEF3C7',
+    link: '/admin/management'
+  },
+  {
+    title: 'New Enquiries',
+    count: dashboardData?.statistics?.newEnquiries ?? 0,
+    icon: <Mail size={24} color="#8B5CF6" />,
+    bg: '#EDE9FE',
+    link: '/admin/management'
+  }
+];
 
-  const recentPatients = [
-    { name: 'Mary Johnson', email: 'mary.johnson@email.com', date: '18 Nov 2026', status: 'Active' },
-    { name: 'David Okafor', email: 'david.okafor@email.com', date: '17 Nov 2026', status: 'Active' },
-    { name: 'Blessing Eze', email: 'blessing.eze@email.com', date: '15 Nov 2026', status: 'Active' },
-    { name: 'Chinedu Nwosu', email: 'chinedu.nwosu@email.com', date: '14 Nov 2026', status: 'Active' },
-    { name: 'Adaobi Uche', email: 'adaobi.uche@email.com', date: '13 Nov 2026', status: 'Active' }
-  ];
-
-  const recentAppointments = [
-    { name: 'Ngozi Okafor', clinic: 'General Hospital', date: '20 Nov 2026', status: 'Upcoming' },
-    { name: 'Emeka Dike', clinic: 'City Medical Centre', date: '18 Nov 2026', status: 'Completed' },
-    { name: 'Chisom Ani', clinic: 'General Hospital', date: '15 Nov 2026', status: 'Missed' },
-    { name: 'Ifeanyi Okeke', clinic: 'St. Joseph Hospital', date: '12 Nov 2026', status: 'Cancelled' },
-    { name: 'Ruth Eze', clinic: 'City Medical Centre', date: '10 Nov 2026', status: 'Completed' }
-  ];
-
-  const recentEnquiries = [
-    { sender: 'Jane Doe', subject: 'Appointment Issue', date: '18 Nov 2026', status: 'New' },
-    { sender: 'Michael Chukwu', subject: 'General Enquiry', date: '16 Nov 2026', status: 'Read' },
-    { sender: 'Precious Umeh', subject: 'Support Request', date: '14 Nov 2026', status: 'Replied' },
-    { sender: 'David Adeyemi', subject: 'Feature Suggestion', date: '12 Nov 2026', status: 'Read' },
-    { sender: 'Grace Nwosu', subject: 'Account Help', date: '10 Nov 2026', status: 'Replied' }
-  ];
-
-  const recentActivity = [
-    { text: 'New patient registered: Mary Johnson', time: '18 Nov 2026 • 10:24 AM', icon: <UserPlus size={16} color="#0D9488" />, bg: '#CCFBF1' },
-    { text: 'Appointment added by Chinedu Nwosu', time: '17 Nov 2026 • 3:15 PM', icon: <CalendarPlus size={16} color="#3B82F6" />, bg: '#EFF6FF' },
-    { text: 'New contact enquiry from Jane Doe', time: '16 Nov 2026 • 9:20 AM', icon: <Mail size={16} color="#8B5CF6" />, bg: '#EDE9FE' },
-    { text: 'Appointment marked completed for Emeka Dike', time: '15 Nov 2026 • 11:30 AM', icon: <CheckCircle2 size={16} color="#059669" />, bg: '#D1FAE5' }
-  ];
 
   const getAppointmentStatusBadge = (status) => {
     switch (status.toLowerCase()) {
@@ -83,6 +160,15 @@ export default function AdminDashboard() {
       default: return <span className="mt-enquiry-badge">{status}</span>;
     }
   };
+
+    // Loading and error checks go HERE
+   if (loading) {
+  return <div className="mt-dashboard-loading">Loading dashboard...</div>;
+  }
+
+  if (error) {
+  return <div className="mt-dashboard-error">{error}</div>;
+  }
 
   return (
     <div className="mt-dashboard-container">
@@ -144,16 +230,37 @@ export default function AdminDashboard() {
                   <th>Status</th>
                 </tr>
               </thead>
-              <tbody>
-                {recentPatients.map((patient, i) => (
-                  <tr key={i}>
-                    <td className="font-semibold">{patient.name}</td>
-                    <td className="text-muted">{patient.email}</td>
-                    <td>{patient.date}</td>
-                    <td><span className="mt-status-badge active">Active</span></td>
-                  </tr>
-                ))}
-              </tbody>
+             <tbody>
+  {dashboardData?.recentPatients?.length > 0 ? (
+    dashboardData.recentPatients.map((patient) => (
+      <tr key={patient.id}>
+        <td className="font-semibold">
+          {patient.full_name || 'No name'}
+        </td>
+
+        <td className="text-muted">
+          {patient.email}
+        </td>
+
+        <td>
+          {new Date(patient.created_at).toLocaleDateString('en-GB', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric'
+          })}
+        </td>
+
+        <td>
+          <span className="mt-status-badge active">Registered</span>
+        </td>
+      </tr>
+    ))
+  ) : (
+    <tr>
+      <td colSpan="4">No patient registrations found.</td>
+    </tr>
+  )}
+</tbody>
             </table>
           </div>
         </div>
@@ -177,15 +284,36 @@ export default function AdminDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {recentAppointments.map((appt, i) => (
-                  <tr key={i}>
-                    <td className="font-semibold">{appt.name}</td>
-                    <td className="text-muted">{appt.clinic}</td>
-                    <td>{appt.date}</td>
-                    <td>{getAppointmentStatusBadge(appt.status)}</td>
-                  </tr>
-                ))}
-              </tbody>
+  {dashboardData?.recentAppointments?.length > 0 ? (
+    dashboardData.recentAppointments.map((appt) => (
+      <tr key={appt.id}>
+        <td className="font-semibold">
+          {appt.patient_name || 'Unknown Patient'}
+        </td>
+
+        <td className="text-muted">
+          {appt.facility_name || 'Not specified'}
+        </td>
+
+        <td>
+          {new Date(`${appt.appointment_date}T00:00:00`).toLocaleDateString('en-GB', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric'
+          })}
+        </td>
+
+        <td>
+          {getAppointmentStatusBadge(appt.status || 'Unknown')}
+        </td>
+      </tr>
+    ))
+  ) : (
+    <tr>
+      <td colSpan="4">No appointment records found.</td>
+    </tr>
+  )}
+</tbody>
             </table>
           </div>
         </div>
@@ -208,44 +336,86 @@ export default function AdminDashboard() {
                   <th>Status</th>
                 </tr>
               </thead>
-              <tbody>
-                {recentEnquiries.map((enquiry, i) => (
-                  <tr key={i}>
-                    <td className="font-semibold">{enquiry.sender}</td>
-                    <td className="text-muted">{enquiry.subject}</td>
-                    <td>{enquiry.date}</td>
-                    <td>{getEnquiryStatusBadge(enquiry.status)}</td>
-                  </tr>
-                ))}
-              </tbody>
+               <tbody>
+  {dashboardData?.recentEnquiries?.length > 0 ? (
+    dashboardData.recentEnquiries.map((enquiry) => (
+      <tr key={enquiry.id}>
+        <td className="font-semibold">
+          {enquiry.full_name || 'Unknown Sender'}
+        </td>
+
+        <td className="text-muted">
+          {enquiry.subject}
+        </td>
+
+        <td>
+          {new Date(enquiry.created_at).toLocaleDateString('en-GB', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric'
+          })}
+        </td>
+
+        <td>
+          {getEnquiryStatusBadge(enquiry.status || 'New')}
+        </td>
+      </tr>
+    ))
+  ) : (
+    <tr>
+      <td colSpan="4">No enquiries found.</td>
+    </tr>
+  )}
+</tbody>
             </table>
           </div>
         </div>
 
         {/* 4. RECENT ACTIVITY TIMELINE */}
-        <div className="mt-card">
-          <div className="mt-card-header">
-            <h3>Recent Activity</h3>
-            <span className="mt-view-all" onClick={() => navigate('/admin/management')}>
-              View All <ArrowRight size={14} />
+<div className="mt-card">
+  <div className="mt-card-header">
+    <h3>Recent Activity</h3>
+    <span
+      className="mt-view-all"
+      onClick={() => navigate('/admin/management')}
+    >
+      View All <ArrowRight size={14} />
+    </span>
+  </div>
+
+  <div className="mt-timeline-list">
+    {recentActivity.length > 0 ? (
+      recentActivity.map((act) => (
+        <div key={act.id} className="mt-timeline-item">
+          <div
+            className="mt-timeline-icon"
+            style={{ background: act.bg }}
+          >
+            {act.label}
+          </div>
+
+          <div className="mt-timeline-content">
+            <p className="mt-timeline-text">{act.text}</p>
+
+            <span className="mt-timeline-time">
+              {new Date(act.date).toLocaleString('en-GB', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              })}
             </span>
           </div>
-          <div className="mt-timeline-list">
-            {recentActivity.map((act, i) => (
-              <div key={i} className="mt-timeline-item">
-                <div className="mt-timeline-icon" style={{ background: act.bg }}>
-                  {act.icon}
-                </div>
-                <div className="mt-timeline-content">
-                  <p className="mt-timeline-text">{act.text}</p>
-                  <span className="mt-timeline-time">{act.time}</span>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
+      ))
+    ) : (
+      <p className="mt-timeline-text">No recent activity available.</p>
+    )}
+  </div>
+</div>
 
-      </div>
+        </div>
 
       {/* EMBEDDED STYLING */}
       <style>{`
@@ -493,11 +663,169 @@ export default function AdminDashboard() {
           margin-top: 2px;
         }
 
+
+        /* ==================================
+   DARK MODE - ADMIN DASHBOARD
+================================== */
+
+html[data-theme="dark"] .mt-dashboard-container {
+  color: #E2E8F0;
+}
+
+html[data-theme="dark"] .mt-welcome-card,
+html[data-theme="dark"] .mt-stat-card,
+html[data-theme="dark"] .mt-card {
+  background: #172B2B;
+  border-color: #294343;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+html[data-theme="dark"] .mt-welcome-left h1,
+html[data-theme="dark"] .mt-stat-card h2,
+html[data-theme="dark"] .mt-card-header h3,
+html[data-theme="dark"] .font-semibold,
+html[data-theme="dark"] .mt-timeline-text {
+  color: #F1F5F9;
+}
+
+html[data-theme="dark"] .mt-welcome-left p,
+html[data-theme="dark"] .mt-stat-card p,
+html[data-theme="dark"] .text-muted,
+html[data-theme="dark"] .mt-timeline-time {
+  color: #A7B8B8;
+}
+
+html[data-theme="dark"] .mt-welcome-right,
+html[data-theme="dark"] .mt-stat-arrow,
+html[data-theme="dark"] .mt-table th {
+  background: #203838;
+  border-color: #345050;
+  color: #E2E8F0;
+}
+
+html[data-theme="dark"] .mt-table td {
+  color: #CBD5E1;
+  border-bottom-color: #294343;
+}
+
+html[data-theme="dark"] .mt-table th {
+  color: #A7B8B8;
+}
+
+html[data-theme="dark"] .mt-view-all {
+  color: #5EEAD4;
+}
+
+html[data-theme="dark"] .mt-view-all:hover {
+  color: #99F6E4;
+}
+
+html[data-theme="dark"] .mt-stat-card:hover {
+  border-color: #0D9488;
+}
+
+html[data-theme="dark"] .mt-dashboard-loading,
+html[data-theme="dark"] .mt-dashboard-error {
+  color: #E2E8F0;
+}
+
+
         @media (max-width: 1024px) {
           .mt-tables-grid {
             grid-template-columns: 1fr;
           }
+
+
+          /* ==================================
+   DARK MODE - ADMIN LAYOUT
+================================== */
+
+html[data-theme="dark"] .mt-admin-wrapper {
+  background: #102222;
+  color: #E2E8F0;
+}
+
+html[data-theme="dark"] .mt-admin-sidebar,
+html[data-theme="dark"] .mt-admin-topbar {
+  background: #172B2B;
+  border-color: #294343;
+}
+
+html[data-theme="dark"] .mt-admin-logo-container,
+html[data-theme="dark"] .mt-admin-sidebar-footer {
+  border-color: #294343;
+}
+
+html[data-theme="dark"] .mt-admin-tagline,
+html[data-theme="dark"] .mt-admin-nav-item {
+  color: #A7B8B8;
+}
+
+html[data-theme="dark"] .mt-admin-nav-item:hover {
+  background: #203838;
+  color: #5EEAD4;
+}
+
+html[data-theme="dark"] .mt-admin-nav-item.active {
+  background: #0D9488;
+  color: #FFFFFF;
+}
+
+html[data-theme="dark"] .mt-admin-toggle-btn,
+html[data-theme="dark"] .mt-admin-icon-btn,
+html[data-theme="dark"] .mt-admin-profile-trigger {
+  background: #203838;
+  border-color: #345050;
+  color: #CBD5E1;
+}
+
+html[data-theme="dark"] .mt-admin-toggle-btn:hover,
+html[data-theme="dark"] .mt-admin-profile-trigger:hover {
+  background: #294343;
+}
+
+html[data-theme="dark"] .mt-admin-name {
+  color: #F1F5F9;
+}
+
+html[data-theme="dark"] .mt-chevron {
+  color: #A7B8B8;
+}
+
+html[data-theme="dark"] .mt-admin-dropdown {
+  background: #172B2B;
+  border-color: #345050;
+}
+
+html[data-theme="dark"] .mt-dropdown-header {
+  background: #203838;
+  border-color: #345050;
+}
+
+html[data-theme="dark"] .mt-dropdown-user-name {
+  color: #F1F5F9;
+}
+
+html[data-theme="dark"] .mt-dropdown-user-role {
+  color: #5EEAD4;
+}
+
+html[data-theme="dark"] .mt-admin-dropdown li {
+  color: #CBD5E1;
+}
+
+html[data-theme="dark"] .mt-admin-dropdown li:hover {
+  background: #294343;
+  color: #5EEAD4;
+}
+
+html[data-theme="dark"] .mt-admin-content {
+  background: #102222;
+}
+
         }
+
+        
         @media (max-width: 768px) {
           .mt-welcome-card {
             flex-direction: column;

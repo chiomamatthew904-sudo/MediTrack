@@ -283,6 +283,51 @@ export default function MyAppointments() {
     return 'badge-upcoming';
   };
 
+  // Mark an appointment as completed
+const handleMarkAsCompleted = async (app) => {
+  try {
+    const { data: { user }, error: authError } =
+      await supabase.auth.getUser();
+
+    if (authError) throw authError;
+
+    if (!user) {
+      alert('Please log in to update this appointment.');
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('appointments')
+      .update({ status: 'Completed' })
+      .eq('id', app.id)
+      .eq('user_id', user.id)
+      .select();
+
+    if (error) throw error;
+
+    if (data && data.length > 0) {
+      const completedApp = {
+        ...data[0],
+        appointment_date: data[0].appointment_date
+          ? data[0].appointment_date.split('T')[0]
+          : data[0].appointment_date
+      };
+
+      setAppointments(prev =>
+        prev.map(item =>
+          item.id === app.id ? completedApp : item
+        )
+      );
+
+      alert('Appointment marked as completed successfully!');
+    }
+
+  } catch (err) {
+    console.error('Error completing appointment:', err);
+    alert('Failed to mark appointment as completed: ' + err.message);
+  }
+};
+
   return (
     <div className="appointments-page-container">
       <div className="page-header-section">
@@ -395,16 +440,26 @@ export default function MyAppointments() {
                         <button onClick={() => handleOpenViewModal(app)} className="action-btn view-btn" title="View Details">
                           <Eye size={16} />
                         </button>
-                        {app.status && app.status.toLowerCase() === 'upcoming' && (
+                         
+                          {app.status && app.status.trim().toLowerCase() === 'upcoming' && (
                           <>
-                            <button onClick={() => handleOpenEditModal(app)} className="action-btn edit-btn" title="Edit">
-                              <Edit3 size={16} />
-                            </button>
-                            <button onClick={() => handleOpenCancelConfirm(app)} className="action-btn cancel-btn" title="Cancel">
-                              <XCircle size={16} />
-                            </button>
-                          </>
-                        )}
+                       <button onClick={() => handleOpenEditModal(app)} className="action-btn edit-btn" title="Edit">
+                       <Edit3 size={16} />
+                      </button>
+
+                        <button
+                        onClick={() => handleMarkAsCompleted(app)}
+                        className="action-btn complete-btn"
+                        title="Mark as Completed"
+                       >
+                       <CheckCircle2 size={16} />
+                       </button>
+
+                      <button onClick={() => handleOpenCancelConfirm(app)} className="action-btn cancel-btn" title="Cancel">
+                      <XCircle size={16} />
+                      </button>
+                       </>
+                     )}
                       </div>
                     </td>
                   </tr>
@@ -787,7 +842,196 @@ export default function MyAppointments() {
         .btn-primary:hover {
           background: #066658;
         }
-      `}</style>
+
+        .complete-btn {
+        background: #DCFCE7;
+        color: #15803D;
+       }
+
+        .complete-btn:hover {
+        background: #BBF7D0;
+        }
+
+                /* ==================================
+           DARK MODE - MY APPOINTMENTS
+        ================================== */
+
+        html[data-theme="dark"] .appointments-page-container {
+          color: #E2E8F0;
+        }
+
+        /* Page header */
+        html[data-theme="dark"] .page-header-section,
+        html[data-theme="dark"] .summary-card,
+        html[data-theme="dark"] .filter-search-container,
+        html[data-theme="dark"] .appointments-table-card,
+        html[data-theme="dark"] .bottom-promo-card {
+          background: #172B2B;
+          border-color: #294343;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        html[data-theme="dark"] .page-title,
+        html[data-theme="dark"] .summary-data h3,
+        html[data-theme="dark"] .app-date,
+        html[data-theme="dark"] .table-hospital strong,
+        html[data-theme="dark"] .promo-content h3 {
+          color: #F1F5F9;
+        }
+
+        html[data-theme="dark"] .page-description,
+        html[data-theme="dark"] .summary-data span,
+        html[data-theme="dark"] .app-time,
+        html[data-theme="dark"] .table-hospital small,
+        html[data-theme="dark"] .promo-content p {
+          color: #A7B8B8;
+        }
+
+        /* Search and filters */
+        html[data-theme="dark"] .search-input-field,
+        html[data-theme="dark"] .filter-select {
+          background: #203838;
+          border-color: #345050;
+          color: #E2E8F0;
+        }
+
+        html[data-theme="dark"] .search-input-field::placeholder {
+          color: #94A3A3;
+        }
+
+        html[data-theme="dark"] .search-input-field:focus,
+        html[data-theme="dark"] .filter-select:focus {
+          background: #203838;
+          border-color: #0D9488;
+        }
+
+        html[data-theme="dark"] .search-icon,
+        html[data-theme="dark"] .filter-icon {
+          color: #A7B8B8;
+        }
+
+        html[data-theme="dark"] .filter-select option {
+          background: #172B2B;
+          color: #E2E8F0;
+        }
+
+        /* Appointments table */
+        html[data-theme="dark"] .appointments-table th {
+          background: #203838;
+          color: #A7B8B8;
+          border-bottom-color: #345050;
+        }
+
+        html[data-theme="dark"] .appointments-table td {
+          color: #CBD5E1;
+          border-bottom-color: #294343;
+        }
+
+        html[data-theme="dark"] .appointments-table tbody tr:hover {
+          background: #203838;
+        }
+
+        html[data-theme="dark"] .reason-cell,
+        html[data-theme="dark"] .no-records-cell {
+          color: #A7B8B8;
+        }
+
+        /* Action buttons */
+        html[data-theme="dark"] .view-btn {
+          background: #294343;
+          color: #CBD5E1;
+        }
+
+        html[data-theme="dark"] .view-btn:hover {
+          background: #345050;
+        }
+
+        /* Promo cards */
+        html[data-theme="dark"] .btn-promo-action {
+          color: #5EEAD4;
+        }
+
+        html[data-theme="dark"] .btn-promo-action:hover {
+          color: #99F6E4;
+        }
+
+        /* Appointment modals */
+        html[data-theme="dark"] .modal-container {
+          background: #172B2B;
+          border: 1px solid #345050;
+          color: #E2E8F0;
+        }
+
+        html[data-theme="dark"] .modal-header h2,
+        html[data-theme="dark"] .form-group label,
+        html[data-theme="dark"] .detail-value,
+        html[data-theme="dark"] .confirm-modal h2 {
+          color: #F1F5F9;
+        }
+
+        html[data-theme="dark"] .modal-subtitle,
+        html[data-theme="dark"] .detail-label,
+        html[data-theme="dark"] .detail-date-badge,
+        html[data-theme="dark"] .confirm-modal p {
+          color: #A7B8B8;
+        }
+
+        html[data-theme="dark"] .close-modal-btn,
+        html[data-theme="dark"] .btn-secondary {
+          background: #294343;
+          color: #E2E8F0;
+        }
+
+        html[data-theme="dark"] .close-modal-btn:hover,
+        html[data-theme="dark"] .btn-secondary:hover {
+          background: #345050;
+        }
+
+        html[data-theme="dark"] .form-group input,
+        html[data-theme="dark"] .form-group select {
+          background: #203838;
+          border-color: #345050;
+          color: #E2E8F0;
+        }
+
+        html[data-theme="dark"] .form-group input::placeholder {
+          color: #94A3A3;
+        }
+
+        html[data-theme="dark"] .form-group input:focus,
+        html[data-theme="dark"] .form-group select:focus {
+          background: #203838;
+          border-color: #0D9488;
+        }
+
+        html[data-theme="dark"] .form-group select option {
+          background: #172B2B;
+          color: #E2E8F0;
+        }
+
+        html[data-theme="dark"] .detail-notes-box {
+          background: #203838;
+          border-color: #345050;
+          color: #E2E8F0;
+        }
+
+        html[data-theme="dark"] .detail-item {
+          border-color: #345050;
+        }
+
+        html[data-theme="dark"] .complete-btn {
+          background: #164E3A;
+          color: #86EFAC;
+        }
+
+        html[data-theme="dark"] .complete-btn:hover {
+          background: #166534;
+        }
+
+        /* Keep semantic status badges and primary action colours visible */
+
+      `}
+      </style>
     </div>
   );
 }

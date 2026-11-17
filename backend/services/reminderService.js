@@ -1,8 +1,6 @@
-
-import cron from 'node-cron';
 import { supabase } from '../config/supabase.js';
 
-// Get today's date in Nigerian time (Africa/Lagos)
+// Get today's date in Nigerian time
 function getTodayInNigeria() {
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Africa/Lagos',
@@ -20,7 +18,7 @@ function getTodayInNigeria() {
   return `${values.year}-${values.month}-${values.day}`;
 }
 
-// Add or subtract days without timezone problems
+// Add or subtract days safely
 function addDays(dateString, numberOfDays) {
   const date = new Date(`${dateString}T00:00:00.000Z`);
 
@@ -29,65 +27,43 @@ function addDays(dateString, numberOfDays) {
   return date.toISOString().slice(0, 10);
 }
 
-// Check appointments and create due reminders
-export async function generateDueReminders() {
+// Supported reminder preferences
+const reminderDays = {
+  '1_day_before': 1,
+  '1 day before': 1,
+  '2_days_before': 2,
+  '2 days before': 2,
+  '1_week_before': 7,
+  '1 week before': 7,
+  'appointment_day': 0,
+  'on the appointment day': 0
+};
+
+// Fetch appointments and create due reminders
+async function processAppointments(appointments) {
   const today = getTodayInNigeria();
-  const lastDate = addDays(today, 7);
 
-  // Number of days before the appointment for each preference
-  const reminderDays = {
-    '1_day_before': 1,
-    '2_days_before': 2,
-    '1_week_before': 7,
-    'appointment_day': 0
-  };
-
-  // Get upcoming appointments within the next seven days
-  const { data: appointments, error } = await supabase
-    .from('appointments')
-    .select(`
-      id,
-      user_id,
-      facility_name,
-      appointment_date,
-      appointment_time,
-      reminder_preference
-    `)
-    .eq('status', 'upcoming')
-    .gte('appointment_date', today)
-    .lte('appointment_date', lastDate);
-
-  if (error) {
-    throw error;
-  }
-
-  if (!appointments || appointments.length === 0) {
-    console.log('No upcoming appointments found.');
-    return 0;
-  }
-
-  // Find appointments whose reminder date is today
   const dueAppointments = appointments.filter((appointment) => {
-    const daysBefore = reminderDays[appointment.reminder_preference];
+    const status = (appointment.status || '').trim().toLowerCase();
 
-    if (daysBefore === undefined) {
-      return false;
-    }
+    if (status !== 'upcoming') return false;
+
+    const daysBefore = reminderDays[
+      (appointment.reminder_preference || '').trim().toLowerCase()
+    ];
+
+    if (daysBefore === undefined) return false;
 
     const reminderDate = addDays(
       appointment.appointment_date,
       -daysBefore
     );
 
-    return reminderDate === today;
+    return reminderDate <= today;
   });
 
-  if (dueAppointments.length === 0) {
-    console.log('No reminders are due today.');
-    return 0;
-  }
+  if (dueAppointments.length === 0) return 0;
 
-  // Check which reminders have already been created
   const appointmentIds = dueAppointments.map(
     (appointment) => appointment.id
   );
@@ -99,9 +75,7 @@ export async function generateDueReminders() {
       .eq('notification_type', 'appointment_reminder')
       .in('appointment_id', appointmentIds);
 
-  if (reminderError) {
-    throw reminderError;
-  }
+  if (reminderError) throw reminderError;
 
   const existingIds = new Set(
     (existingReminders || []).map(
@@ -109,53 +83,91 @@ export async function generateDueReminders() {
     )
   );
 
-  // Prepare notifications only for appointments without a reminder
   const newNotifications = dueAppointments
     .filter((appointment) => !existingIds.has(appointment.id))
-    .map((appointment) => ({
-      user_id: appointment.user_id,
-      appointment_id: appointment.id,
-      title: 'Appointment Reminder',
-      message: `Your appointment at ${appointment.facility_name} is scheduled for ${appointment.appointment_date} at ${appointment.appointment_time}.`,
-      notification_type: 'appointment_reminder',
-      scheduled_for: `${today}T08:00:00+01:00`
-    }));
+    .map((appointment) => {
+      const daysBefore = reminderDays[
+        (appointment.reminder_preference || '').trim().toLowerCase()
+      ];
 
-  if (newNotifications.length === 0) {
-    console.log('All due reminders have already been created.');
-    return 0;
-  }
+      const reminderDate = addDays(
+        appointment.appointment_date,
+        -daysBefore
+      );
 
-  // Save the new reminders in Supabase
+      return {
+        user_id: appointment.user_id,
+        appointment_id: appointment.id,
+        title: 'Appointment Reminder',
+        message: `Your appointment at ${appointment.facility_name} is scheduled for ${appointment.appointment_date} at ${appointment.appointment_time}.`,
+        notification_type: 'appointment_reminder',
+        scheduled_for: `${reminderDate}T00:00:00+01:00`
+      };
+    });
+
+  if (newNotifications.length === 0) return 0;
+
   const { error: insertError } = await supabase
     .from('notifications')
     .insert(newNotifications);
 
-  if (insertError) {
-    throw insertError;
-  }
+  if (insertError) throw insertError;
 
   console.log(`${newNotifications.length} reminder(s) created.`);
 
   return newNotifications.length;
 }
 
-// Run the reminder check every day at 8:00 AM Nigerian time
-export function startReminderScheduler() {
-  cron.schedule(
-    '0 8 * * *',
-    async () => {
-      try {
-        console.log('Checking for due appointment reminders...');
-        await generateDueReminders();
-      } catch (error) {
-        console.error('Reminder scheduler error:', error.message);
-      }
-    },
-    {
-      timezone: 'Africa/Lagos'
-    }
-  );
+// Fetch appointments for one patient
+async function fetchUpcomingAppointments(userId = null) {
+  const today = getTodayInNigeria();
+  const lastDate = addDays(today, 7);
 
-  console.log('Reminder scheduler started.');
+  let query = supabase
+    .from('appointments')
+    .select(`
+      id,
+      user_id,
+      facility_name,
+      appointment_date,
+      appointment_time,
+      reminder_preference,
+      status
+    `)
+    .gte('appointment_date', today)
+    .lte('appointment_date', lastDate);
+
+  if (userId) {
+    query = query.eq('user_id', userId);
+  }
+
+  const { data, error } = await query;
+
+  if (error) throw error;
+
+  return data || [];
 }
+
+// Check reminders for one patient
+export async function generateDueReminders(userId) {
+  if (!userId) {
+    throw new Error('A valid patient user ID is required.');
+  }
+
+  const appointments = await fetchUpcomingAppointments(userId);
+
+  return processAppointments(appointments);
+}
+
+// Automatically check reminders for all patients
+export async function generateDueRemindersForAllPatients() {
+  const appointments = await fetchUpcomingAppointments();
+
+  if (appointments.length === 0) {
+    console.log('No appointments found for reminder checking.');
+    return 0;
+  }
+
+  return processAppointments(appointments);
+}
+

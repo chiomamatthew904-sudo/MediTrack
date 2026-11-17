@@ -19,6 +19,17 @@ import doctorAvatar from '../../assets/patdocimg.jpg';
 // IMPORT SUPABASE CLIENT
 import { supabase } from '../../supabaseClient';
 
+// Get today's date using the patient's local timezone
+function getLocalDateString() {
+  const today = new Date();
+
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+}
+
 export default function PatientDashboard() {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -34,9 +45,10 @@ export default function PatientDashboard() {
       if (!user) return;
 
       const { data, error } = await supabase
-        .from('appointments')
-        .select('*')
-        .order('appointment_date', { ascending: true });
+      .from('appointments')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('appointment_date', { ascending: true });
 
       if (error) {
         console.error('Error fetching dashboard appointments:', error.message);
@@ -55,7 +67,14 @@ export default function PatientDashboard() {
   };
 
   // Compute live metrics from database records
-  const upcomingAppointments = appointments.filter(a => a.status && a.status.toLowerCase() === 'upcoming');
+  const today = getLocalDateString();
+
+  const upcomingAppointments = appointments.filter(a =>
+  a.status?.toLowerCase() === 'upcoming' &&
+  a.appointment_date &&
+  a.appointment_date >= today
+ );
+
   const completedAppointments = appointments.filter(a => a.status && a.status.toLowerCase() === 'completed');
   
   const upcomingCount = upcomingAppointments.length;
@@ -117,7 +136,7 @@ export default function PatientDashboard() {
             <Bell size={22} />
           </div>
           <div className="stat-data">
-            <h3 className="stat-number">2</h3>
+           <h3 className="stat-number">{upcomingAppointments.length}</h3>
             <span className="stat-label">Pending Reminders</span>
           </div>
         </div>
@@ -185,42 +204,39 @@ export default function PatientDashboard() {
             </Link>
           </div>
 
-          <div className="reminders-list">
-            <div className="reminder-item">
-              <div className="reminder-icon-box teal-icon">
-                <Bell size={16} />
-              </div>
-              <div className="reminder-info">
-                <h4>Take your prescribed medication</h4>
-                <span>Today • 8:00 PM</span>
-              </div>
-              <div className="reminder-status-dot"></div>
-            </div>
+           <div className="reminders-list">
+    {upcomingAppointments.slice(0, 3).map((app) => (
+    <div className="reminder-item" key={app.id}>
+      <div className="reminder-icon-box teal-icon">
+        <Bell size={16} />
+      </div>
 
-            <div className="reminder-item">
-              <div className="reminder-icon-box green-icon">
-                <Activity size={16} />
-              </div>
-              <div className="reminder-info">
-                <h4>Blood test appointment</h4>
-                <span>14 Nov 2026</span>
-              </div>
-              <div className="reminder-status-dot"></div>
-            </div>
+      <div className="reminder-info">
+        <h4>{app.reason || 'Upcoming Appointment'}</h4>
+        <span>
+          {new Date(`${app.appointment_date}T00:00:00`).toLocaleDateString(
+            'en-GB',
+            {
+              day: '2-digit',
+              month: 'short',
+              year: 'numeric'
+            }
+          )}
+          {app.appointment_time ? ` • ${app.appointment_time}` : ''}
+        </span>
+      </div>
 
-            <div className="reminder-item">
-              <div className="reminder-icon-box pink-icon">
-                <Heart size={16} />
-              </div>
-              <div className="reminder-info">
-                <h4>Follow up with your doctor</h4>
-                <span>20 Nov 2026</span>
-              </div>
-              <div className="reminder-status-dot"></div>
-            </div>
+      <div className="reminder-status-dot"></div>
+    </div>
+  ))}
+
+  {upcomingAppointments.length === 0 && (
+    <p className="no-data-text">
+      No upcoming appointment reminders.
+    </p>
+  )}
           </div>
         </div>
-
       </div>
 
       {/* BOTTOM SECTION (RECENT ACTIVITY & AI ASSISTANT PROMO) */}
@@ -707,6 +723,98 @@ export default function PatientDashboard() {
           color: rgba(255, 255, 255, 0.15);
           pointer-events: none;
         }
+
+                /* ==================================
+           DARK MODE - PATIENT DASHBOARD
+        ================================== */
+
+        html[data-theme="dark"] .patient-dashboard {
+          color: #E2E8F0;
+        }
+
+        /* Welcome banner */
+        html[data-theme="dark"] .welcome-banner {
+          background: #172B2B;
+          border-color: #294343;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        html[data-theme="dark"] .welcome-heading,
+        html[data-theme="dark"] .promo-badge-text strong {
+          color: #F1F5F9;
+        }
+
+        html[data-theme="dark"] .welcome-subtext,
+        html[data-theme="dark"] .promo-badge-text {
+          color: #A7B8B8;
+        }
+
+        html[data-theme="dark"] .banner-promo-badge {
+          background: #203838;
+          border-color: #345050;
+        }
+
+        html[data-theme="dark"] .promo-badge-icon {
+          color: #5EEAD4;
+        }
+
+        /* Statistics cards */
+        html[data-theme="dark"] .stat-card,
+        html[data-theme="dark"] .dashboard-card {
+          background: #172B2B;
+          border-color: #294343;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        html[data-theme="dark"] .stat-number,
+        html[data-theme="dark"] .card-title,
+        html[data-theme="dark"] .appointment-type,
+        html[data-theme="dark"] .reminder-info h4,
+        html[data-theme="dark"] .activity-desc p {
+          color: #F1F5F9;
+        }
+
+        html[data-theme="dark"] .stat-label,
+        html[data-theme="dark"] .appointment-meta-row,
+        html[data-theme="dark"] .reminder-info span,
+        html[data-theme="dark"] .activity-desc span,
+        html[data-theme="dark"] .loading-text,
+        html[data-theme="dark"] .no-data-text {
+          color: #A7B8B8;
+        }
+
+        /* Appointment and reminder sections */
+        html[data-theme="dark"] .doctor-photo-frame {
+          border-color: #345050;
+        }
+
+        html[data-theme="dark"] .meta-icon {
+          color: #5EEAD4;
+        }
+
+        html[data-theme="dark"] .view-all-link {
+          color: #5EEAD4;
+        }
+
+        html[data-theme="dark"] .view-all-link:hover {
+          color: #99F6E4;
+        }
+
+        html[data-theme="dark"] .reminder-item {
+          background: #203838;
+          border-color: #345050;
+        }
+
+        html[data-theme="dark"] .reminder-status-dot {
+          background: #5EEAD4;
+        }
+
+        /* Recent activity */
+        html[data-theme="dark"] .activity-icon-circle {
+          border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* Preserve the AI assistant card's original gradient and white text */
 
         /* RESPONSIVE MEDIA QUERIES */
         @media (max-width: 1200px) {

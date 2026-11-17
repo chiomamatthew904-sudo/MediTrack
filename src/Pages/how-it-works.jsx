@@ -1059,6 +1059,244 @@ function HowItWorks() {
           color: #FF4D4D;
         }
 
+
+
+
+/* ==================================
+   DARK MODE - HOW IT WORKS PAGE
+================================== */
+
+html[data-theme="dark"] .how-page-wrapper {
+  background: #102222;
+  color: #E2E8F0;
+}
+
+/* Navigation */
+html[data-theme="dark"] .how-page-wrapper .navbar {
+  background: #172B2B;
+  border-bottom-color: #294343;
+}
+
+html[data-theme="dark"] .how-page-wrapper .nav-links a,
+html[data-theme="dark"] .how-page-wrapper .mobile-dropdown-menu a {
+  color: #CBD5E1;
+}
+
+html[data-theme="dark"] .how-page-wrapper .nav-links a:hover,
+html[data-theme="dark"] .how-page-wrapper .nav-links a.active,
+html[data-theme="dark"] .how-page-wrapper .mobile-dropdown-menu a:hover {
+  color: #5EEAD4;
+}
+
+html[data-theme="dark"] .how-page-wrapper .mobile-menu-btn {
+  color: #E2E8F0;
+}
+
+html[data-theme="dark"] .how-page-wrapper .mobile-dropdown-menu {
+  background: #172B2B;
+  border-color: #294343;
+}
+
+/* Hero */
+html[data-theme="dark"] .how-page-wrapper .how-hero {
+  background: linear-gradient(110deg, #123D39, #102222);
+}
+
+html[data-theme="dark"] .how-page-wrapper .hero-title {
+  color: #5EEAD4;
+}
+
+html[data-theme="dark"] .how-page-wrapper .hero-desc {
+  color: #A7B8B8;
+}
+
+html[data-theme="dark"] .how-page-wrapper .btn-primary-pill,
+html[data-theme="dark"] .how-page-wrapper .btn-get-started {
+  background: #0D9488;
+}
+
+html[data-theme="dark"] .how-page-wrapper .btn-primary-pill:hover,
+html[data-theme="dark"] .how-page-wrapper .btn-get-started:hover {
+  background: #0F766E;
+}
+
+/* Section backgrounds */
+html[data-theme="dark"] .how-page-wrapper .steps-section,
+html[data-theme="dark"] .how-page-wrapper .manage-section,
+html[data-theme="dark"] .how-page-wrapper .cta-wrapper {
+  background: #102222;
+}
+
+html[data-theme="dark"] .how-page-wrapper .booking-process-section {
+  background: #132B2A;
+}
+
+html[data-theme="dark"] .how-page-wrapper .why-section {
+  background: #132B2A;
+}
+
+/* Section headings and descriptions */
+html[data-theme="dark"] .how-page-wrapper .section-heading,
+html[data-theme="dark"] .how-page-wrapper .step-card h3,
+html[data-theme="dark"] .how-page-wrapper .why-card h3 {
+  color: #F1F5F9;
+}
+
+html[data-theme="dark"] .how-page-wrapper .sub-heading,
+html[data-theme="dark"] .how-page-wrapper .split-desc,
+html[data-theme="dark"] .how-page-wrapper .step-card p,
+html[data-theme="dark"] .how-page-wrapper .why-card p {
+  color: #A7B8B8;
+}
+
+/* Steps */
+html[data-theme="dark"] .how-page-wrapper .step-card {
+  background: #172B2B;
+  border-radius: 14px;
+}
+
+html[data-theme="dark"] .how-page-wrapper .step-icon-bg {
+  background: #164E45;
+  color: #5EEAD4;
+}
+
+html[data-theme="dark"] .how-page-wrapper .step-arrow {
+  color: #5EEAD4;
+}
+
+/* Booking process */
+html[data-theme="dark"] .how-page-wrapper .check-list li {
+  color: #CBD5E1;
+}
+
+html[data-theme="dark"] .how-page-wrapper .teal-check {
+  color: #5EEAD4;
+}
+
+html[data-theme="dark"] .how-page-wrapper .ui-mockup-card {
+  background: #172B2B;
+  border-color: #345050;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+html[data-theme="dark"] .how-page-wrapper .mock-header {
+  border-bottom-color: #345050;
+}
+
+html[data-theme="dark"] .how-page-wrapper .mock-steps-stepper {
+  color: #94A3B8;
+}
+
+html[data-theme="dark"] .how-page-wrapper .mock-steps-stepper .active {
+  color: #5EEAD4;
+}
+
+html[data-theme="dark"] .how-page-wrapper .mock-label {
+  color: #E2E8F0;
+}
+
+html[data-theme="dark"] .how-page-wrapper .mock-dropdown,
+html[data-theme="dark"] .how-page-wrapper .mock-calendar {
+  background: #203838;
+  border-color: #345050;
+  color: #CBD5E1;
+}
+
+html[data-theme="dark"] .how-page-wrapper .cal-header {
+  color: #E2E8F0;
+}
+
+html[data-theme="dark"] .how-page-wrapper .cal-days {
+  color: #CBD5E1;
+}
+
+html[data-theme="dark"] .how-page-wrapper .time-btn {
+  background: #203838;
+  border-color: #345050;
+  color: #CBD5E1;
+}
+
+html[data-theme="dark"] .how-page-wrapper .time-btn.active {
+  background: #0D9488;
+  border-color: #0D9488;
+  color: #FFFFFF;
+}
+
+html[data-theme="dark"] .how-page-wrapper .mock-confirm-btn {
+  background: #0D9488;
+}
+
+/* Dashboard preview */
+html[data-theme="dark"] .how-page-wrapper .dashboard-frame {
+  background: #172B2B;
+  border-color: #345050;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+html[data-theme="dark"] .how-page-wrapper .dash-main {
+  background: #203838;
+  color: #E2E8F0;
+}
+
+html[data-theme="dark"] .how-page-wrapper .dash-topbar h3,
+html[data-theme="dark"] .how-page-wrapper .dash-card-left h4 {
+  color: #F1F5F9;
+}
+
+html[data-theme="dark"] .how-page-wrapper .dash-link,
+html[data-theme="dark"] .how-page-wrapper .dash-time-tag {
+  color: #5EEAD4;
+}
+
+html[data-theme="dark"] .how-page-wrapper .dash-card {
+  background: #172B2B;
+  border-color: #345050;
+}
+
+html[data-theme="dark"] .how-page-wrapper .dash-card-left p {
+  color: #A7B8B8;
+}
+
+/* Why MediTrack cards */
+html[data-theme="dark"] .how-page-wrapper .why-card {
+  background: #172B2B;
+  border-color: #294343;
+}
+
+html[data-theme="dark"] .how-page-wrapper .why-icon {
+  background: #164E45;
+  color: #5EEAD4;
+}
+
+/* Call to action */
+html[data-theme="dark"] .how-page-wrapper .cta-banner {
+  background: #0F766E;
+}
+
+/* Footer */
+html[data-theme="dark"] .how-page-wrapper .footer-light {
+  background: linear-gradient(180deg, #172B2B 0%, #123D39 100%);
+}
+
+html[data-theme="dark"] .how-page-wrapper .footer-divider {
+  background: #345050;
+}
+
+html[data-theme="dark"] .how-page-wrapper .footer-socials a {
+  color: #CBD5E1;
+}
+
+html[data-theme="dark"] .how-page-wrapper .footer-socials a:hover {
+  color: #5EEAD4;
+}
+
+html[data-theme="dark"] .how-page-wrapper .footer-right {
+  color: #A7B8B8;
+}
+
+
+
+
         /* RESPONSIVE */
         @media (max-width: 992px) {
           .nav-links { display: none; }

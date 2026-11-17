@@ -80,12 +80,20 @@ export default function NotificationsPage() {
   }, [paginatedNotifications]);
 
   // 2. Upcoming Reminders from Shared Appointment Context
-  const upcomingReminders = useMemo(() => {
-    return appointments.filter((app) => {
-      const st = (app.status || '').toLowerCase();
-      return st !== 'completed' && st !== 'missed' && st !== 'cancelled';
-    });
-  }, [appointments]);
+  const today = new Date().toLocaleDateString('en-CA', {
+  timeZone: 'Africa/Lagos'
+});
+
+const upcomingReminders = useMemo(() => {
+  return appointments.filter((app) => {
+    const status = (app.status || '').toLowerCase().trim();
+
+    return (
+      app.appointment_date >= today &&
+      status === 'upcoming'
+    );
+  });
+}, [appointments, today]);
 
   // Summary Card Counts
   const totalNotificationsCount = notifications.length;
@@ -1120,6 +1128,160 @@ export default function NotificationsPage() {
           width: fit-content;
         }
         .btn-save-preferences:hover { background: #066658; }
+
+
+        /* ==================================
+   DARK MODE - NOTIFICATIONS PAGE
+================================== */
+
+html[data-theme="dark"] .notifications-page-container {
+  color: #E2E8F0;
+}
+
+/* Header and main cards */
+html[data-theme="dark"] .page-header-section,
+html[data-theme="dark"] .metric-card,
+html[data-theme="dark"] .section-card {
+  background: #172B2B;
+  border-color: #294343;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+html[data-theme="dark"] .page-title,
+html[data-theme="dark"] .metric-value,
+html[data-theme="dark"] .metric-label,
+html[data-theme="dark"] .toolbar-title-group h2,
+html[data-theme="dark"] .header-title-group h2,
+html[data-theme="dark"] .notif-title-row h4,
+html[data-theme="dark"] .setting-block h4,
+html[data-theme="dark"] .channel-info strong,
+html[data-theme="dark"] .reminder-info h4 {
+  color: #F1F5F9;
+}
+
+html[data-theme="dark"] .page-description,
+html[data-theme="dark"] .metric-sub,
+html[data-theme="dark"] .group-title,
+html[data-theme="dark"] .notif-desc,
+html[data-theme="dark"] .notif-time,
+html[data-theme="dark"] .record-count-text,
+html[data-theme="dark"] .setting-subtitle,
+html[data-theme="dark"] .setting-label-row span,
+html[data-theme="dark"] .channel-info p,
+html[data-theme="dark"] .reminder-info p,
+html[data-theme="dark"] .reminder-timing-note,
+html[data-theme="dark"] .empty-notifications,
+html[data-theme="dark"] .empty-reminders {
+  color: #A7B8B8;
+}
+
+/* Notification filters */
+html[data-theme="dark"] .filter-pill {
+  background: #203838;
+  border-color: #345050;
+  color: #CBD5E1;
+}
+
+html[data-theme="dark"] .filter-pill:hover:not(.active) {
+  background: #294343;
+  border-color: #0D9488;
+}
+
+html[data-theme="dark"] .filter-pill.active {
+  background: #0D9488;
+  border-color: #0D9488;
+  color: #FFFFFF;
+}
+
+/* Notification items */
+html[data-theme="dark"] .notification-card-item {
+  background: #203838;
+  border-color: #345050;
+}
+
+html[data-theme="dark"] .notification-card-item.unread-item {
+  background: #1C3A37;
+  border-color: #0D665B;
+}
+
+html[data-theme="dark"] .notif-icon-circle,
+html[data-theme="dark"] .header-icon-box {
+  background: #294343;
+  color: #5EEAD4;
+}
+
+/* Notification action buttons */
+html[data-theme="dark"] .read-action {
+  background: #294343;
+  color: #CBD5E1;
+}
+
+html[data-theme="dark"] .read-action:hover {
+  background: #345050;
+}
+
+html[data-theme="dark"] .view-action {
+  background: #164E48;
+  color: #5EEAD4;
+}
+
+html[data-theme="dark"] .view-action:hover {
+  background: #115E54;
+}
+
+/* Pagination */
+html[data-theme="dark"] .page-nav-btn,
+html[data-theme="dark"] .page-num-btn {
+  background: #203838;
+  border-color: #345050;
+  color: #E2E8F0;
+}
+
+html[data-theme="dark"] .page-num-btn.active {
+  background: #0D9488;
+  border-color: #0D9488;
+  color: #FFFFFF;
+}
+
+html[data-theme="dark"] .table-footer,
+html[data-theme="dark"] .notifications-toolbar,
+html[data-theme="dark"] .settings-header {
+  border-color: #294343;
+}
+
+/* Upcoming reminders */
+html[data-theme="dark"] .upcoming-reminder-card {
+  background: #203838;
+  border-color: #345050;
+}
+
+html[data-theme="dark"] .reminder-card-bottom {
+  border-top-color: #345050;
+}
+
+html[data-theme="dark"] .view-calendar-link {
+  color: #5EEAD4;
+}
+
+html[data-theme="dark"] .view-calendar-link:hover {
+  color: #99F6E4;
+}
+
+/* Reminder settings */
+html[data-theme="dark"] .channel-toggle-row {
+  background: #203838;
+  border-color: #345050;
+}
+
+html[data-theme="dark"] .radio-label {
+  color: #CBD5E1;
+}
+
+html[data-theme="dark"] .radio-label input[type="radio"] {
+  accent-color: #5EEAD4;
+}
+
+/* Keep success messages, status labels and important action colours visible */
 
         /* RESPONSIVE MEDIA QUERIES */
         @media (max-width: 992px) {

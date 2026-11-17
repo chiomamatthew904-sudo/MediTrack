@@ -906,6 +906,154 @@ export default function AIAssistantPage() {
           text-align: center;
         }
 
+
+/* ==================================
+   DARK MODE - AI ASSISTANT
+================================== */
+
+html[data-theme="dark"] .assistant-page-container {
+  color: #E2E8F0;
+}
+
+/* Page header */
+html[data-theme="dark"] .page-header-section,
+html[data-theme="dark"] .conversations-panel,
+html[data-theme="dark"] .chat-workspace-card {
+  background: #172B2B;
+  border-color: #294343;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+html[data-theme="dark"] .page-title,
+html[data-theme="dark"] .panel-title h3,
+html[data-theme="dark"] .bot-name,
+html[data-theme="dark"] .suggested-header {
+  color: #F1F5F9;
+}
+
+html[data-theme="dark"] .page-description {
+  color: #A7B8B8;
+}
+
+html[data-theme="dark"] .assistant-avatar-head,
+html[data-theme="dark"] .bot-status-avatar,
+html[data-theme="dark"] .message-avatar {
+  background: #203F3B;
+  color: #5EEAD4;
+}
+
+html[data-theme="dark"] .header-status-badge {
+  background: #164E45;
+  border-color: #285B53;
+  color: #5EEAD4;
+}
+
+/* Mobile history toggle */
+html[data-theme="dark"] .mobile-history-toggle-btn {
+  background: #172B2B;
+  border-color: #345050;
+  color: #E2E8F0;
+}
+
+/* Conversation history */
+html[data-theme="dark"] .panel-header,
+html[data-theme="dark"] .assistant-status-row {
+  border-bottom-color: #345050;
+}
+
+html[data-theme="dark"] .conversation-item {
+  background: #203838;
+  border-color: #345050;
+}
+
+html[data-theme="dark"] .conversation-item:hover,
+html[data-theme="dark"] .conversation-item.active {
+  background: #164E45;
+  border-color: #0D9488;
+}
+
+html[data-theme="dark"] .conv-info h4 {
+  color: #F1F5F9;
+}
+
+html[data-theme="dark"] .conv-info span {
+  color: #A7B8B8;
+}
+
+html[data-theme="dark"] .conv-arrow,
+html[data-theme="dark"] .neutral-status-dot {
+  color: #64748B;
+}
+
+/* Chat messages */
+html[data-theme="dark"] .assistant-bubble,
+html[data-theme="dark"] .typing-indicator-bubble {
+  background: #203F3B;
+  color: #E2E8F0;
+}
+
+html[data-theme="dark"] .message-time {
+  color: #94A3B8;
+}
+
+html[data-theme="dark"] .btn-chat-action {
+  background: #203838;
+  border-color: #0D9488;
+  color: #5EEAD4;
+}
+
+html[data-theme="dark"] .btn-chat-action:hover {
+  background: #294343;
+}
+
+/* Suggested questions */
+html[data-theme="dark"] .suggested-btn {
+  background: #203838;
+  border-color: #345050;
+  box-shadow: none;
+}
+
+html[data-theme="dark"] .suggested-btn:hover {
+  background: #294343;
+  border-color: #0D9488;
+}
+
+html[data-theme="dark"] .suggested-btn-left span {
+  color: #E2E8F0;
+}
+
+html[data-theme="dark"] .suggested-arrow {
+  color: #A7B8B8;
+}
+
+/* Chat input */
+html[data-theme="dark"] .chat-input-container {
+  background: #172B2B;
+  border-top-color: #345050;
+}
+
+html[data-theme="dark"] .chat-text-input {
+  background: #203838;
+  border-color: #345050;
+  color: #E2E8F0;
+}
+
+html[data-theme="dark"] .chat-text-input::placeholder {
+  color: #94A3B8;
+}
+
+html[data-theme="dark"] .chat-text-input:focus {
+  background: #294343;
+  border-color: #0D9488;
+}
+
+html[data-theme="dark"] .medical-disclaimer-text {
+  color: #A7B8B8;
+}
+
+/* Preserve teal buttons, user message bubbles and typing animation */
+
+
         /* RESPONSIVE MEDIA QUERIES */
         @media (max-width: 992px) {
           .mobile-history-toggle-btn {

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import medimg from "../assets/medimg.jpg";
 import {
   CalendarCheck,
@@ -21,7 +21,6 @@ import {
 
 export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const navigate = useNavigate();
 
   return (
     <>
@@ -97,12 +96,8 @@ export default function Home() {
             </div>
           </div>
 
-          {/* DASHBOARD PREVIEW INTERACTIVE CONTAINER */}
-          <div 
-            className="dashboard-preview" 
-            onClick={() => navigate('/dashboard')}
-            title="Click to enter patient portal"
-          >
+         {/* DASHBOARD PREVIEW */}
+        <div className="dashboard-preview">
             <div className="dashboard-sidebar">
               <div className="mini-logo">
                 <CalendarCheck size={20} />
@@ -572,7 +567,6 @@ export default function Home() {
           grid-template-columns: 115px 1fr;
           overflow: hidden;
           box-shadow: 0 12px 35px rgba(18, 59, 58, 0.09);
-          cursor: pointer;
           transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
@@ -1096,6 +1090,226 @@ export default function Home() {
         .footer-tagline svg {
           color: #087F6E;
         }
+
+
+/* ==================================
+   DARK MODE - HOME PAGE
+================================== */
+
+html[data-theme="dark"] .home-page {
+  background: #102222;
+  color: #E2E8F0;
+}
+
+/* Navigation */
+html[data-theme="dark"] .home-page .navbar {
+  background: #172B2B;
+  border-bottom-color: #294343;
+}
+
+html[data-theme="dark"] .home-page .nav-links a,
+html[data-theme="dark"] .home-page .login-link-btn {
+  color: #CBD5E1;
+}
+
+html[data-theme="dark"] .home-page .nav-links a:hover,
+html[data-theme="dark"] .home-page .login-link-btn:hover {
+  color: #5EEAD4;
+}
+
+html[data-theme="dark"] .home-page .menu-toggle {
+  color: #E2E8F0;
+}
+
+html[data-theme="dark"] .home-page .secondary-button {
+  background: #172B2B;
+  color: #5EEAD4;
+  border-color: #0D9488;
+}
+
+html[data-theme="dark"] .home-page .secondary-button:hover {
+  background: #203F3B;
+}
+
+html[data-theme="dark"] .home-page .primary-button {
+  background: #0D9488;
+}
+
+html[data-theme="dark"] .home-page .primary-button:hover {
+  background: #0F766E;
+}
+
+/* Mobile navigation menu */
+html[data-theme="dark"] .home-page .nav-links {
+  background: #172B2B;
+  border-top-color: #294343;
+}
+
+/* Hero section */
+html[data-theme="dark"] .home-page .hero {
+  background: linear-gradient(110deg, #123D39, #102222);
+}
+
+html[data-theme="dark"] .home-page .hero-title {
+  color: #F1F5F9;
+}
+
+html[data-theme="dark"] .home-page .hero-title span {
+  color: #5EEAD4;
+}
+
+html[data-theme="dark"] .home-page .hero-description {
+  color: #A7B8B8;
+}
+
+html[data-theme="dark"] .home-page .hero-label {
+  background: #164E45;
+  color: #5EEAD4;
+}
+
+/* Dashboard preview */
+html[data-theme="dark"] .home-page .dashboard-preview {
+  background: #172B2B;
+  border-color: #345050;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
+}
+
+html[data-theme="dark"] .home-page .dashboard-preview:hover {
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3);
+}
+
+html[data-theme="dark"] .home-page .dashboard-sidebar {
+  background: #132E2D;
+  border-right-color: #345050;
+}
+
+html[data-theme="dark"] .home-page .sidebar-item,
+html[data-theme="dark"] .home-page .sidebar-settings {
+  color: #A7B8B8;
+}
+
+html[data-theme="dark"] .home-page .sidebar-item.selected {
+  background: #164E45;
+  color: #5EEAD4;
+}
+
+html[data-theme="dark"] .home-page .dashboard-top {
+  color: #F1F5F9;
+}
+
+html[data-theme="dark"] .home-page .dashboard-top p,
+html[data-theme="dark"] .home-page .appointment-info p,
+html[data-theme="dark"] .home-page .appointment-time {
+  color: #A7B8B8;
+}
+
+html[data-theme="dark"] .home-page .appointment-card,
+html[data-theme="dark"] .home-page .action-card {
+  background: #203838;
+  border-color: #345050;
+}
+
+html[data-theme="dark"] .home-page .appointment-info h4,
+html[data-theme="dark"] .home-page .quick-actions h4,
+html[data-theme="dark"] .home-page .action-card span {
+  color: #E2E8F0;
+}
+
+html[data-theme="dark"] .home-page .appointment-icon {
+  background: #164E45;
+  color: #5EEAD4;
+}
+
+html[data-theme="dark"] .home-page .reminder-tag {
+  background: #164E45;
+  color: #5EEAD4;
+}
+
+/* Value strip */
+html[data-theme="dark"] .home-page .value-strip {
+  background: #132B2A;
+  border-bottom-color: #294343;
+}
+
+html[data-theme="dark"] .home-page .value-item {
+  color: #E2E8F0;
+}
+
+html[data-theme="dark"] .home-page .value-divider {
+  background: #345050;
+}
+
+/* Features section */
+html[data-theme="dark"] .home-page .key-features-section,
+html[data-theme="dark"] .home-page .how-it-works-section {
+  background: #102222;
+}
+
+html[data-theme="dark"] .home-page .features-title,
+html[data-theme="dark"] .home-page .how-it-works-title,
+html[data-theme="dark"] .home-page .feature-card h3,
+html[data-theme="dark"] .home-page .step-item h3 {
+  color: #F1F5F9;
+}
+
+html[data-theme="dark"] .home-page .features-subtitle,
+html[data-theme="dark"] .home-page .how-it-works-subtitle,
+html[data-theme="dark"] .home-page .feature-card p,
+html[data-theme="dark"] .home-page .step-item p {
+  color: #A7B8B8;
+}
+
+html[data-theme="dark"] .home-page .feature-card {
+  background: #172B2B;
+  border-color: #294343;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+html[data-theme="dark"] .home-page .feature-card:hover {
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+}
+
+html[data-theme="dark"] .home-page .feature-icon-wrapper,
+html[data-theme="dark"] .home-page .step-icon-circle {
+  background: #164E45;
+  color: #5EEAD4;
+}
+
+html[data-theme="dark"] .home-page .step-arrow {
+  color: #64748B;
+}
+
+/* Call to action */
+html[data-theme="dark"] .home-page .cta-banner {
+  background: #0F766E;
+}
+
+/* Footer */
+html[data-theme="dark"] .home-page .footer {
+  background: #172B2B;
+  border-top-color: #294343;
+}
+
+html[data-theme="dark"] .home-page .footer-top {
+  border-bottom-color: #345050;
+}
+
+html[data-theme="dark"] .home-page .footer-bottom,
+html[data-theme="dark"] .home-page .footer-tagline {
+  color: #A7B8B8;
+}
+
+html[data-theme="dark"] .home-page .footer-socials a {
+  border-color: #345050;
+  color: #5EEAD4;
+}
+
+html[data-theme="dark"] .home-page .footer-socials a:hover {
+  background: #0D9488;
+  border-color: #0D9488;
+  color: #FFFFFF;
+}
+
 
         /* RESPONSIVE MEDIA QUERIES */
         @media (max-width: 900px) {

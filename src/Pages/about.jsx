@@ -869,6 +869,171 @@ export default function About() {
           color: #FF4D4D;
         }
 
+
+
+/* ==================================
+   DARK MODE - ABOUT PAGE
+================================== */
+
+html[data-theme="dark"] .about-page-wrapper {
+  background: #102222;
+  color: #E2E8F0;
+}
+
+/* Navigation */
+html[data-theme="dark"] .about-page-wrapper .navbar {
+  background: #172B2B;
+  border-bottom-color: #294343;
+}
+
+html[data-theme="dark"] .about-page-wrapper .nav-links a,
+html[data-theme="dark"] .about-page-wrapper .mobile-dropdown-menu a {
+  color: #CBD5E1;
+}
+
+html[data-theme="dark"] .about-page-wrapper .nav-links a:hover,
+html[data-theme="dark"] .about-page-wrapper .nav-links a.active,
+html[data-theme="dark"] .about-page-wrapper .mobile-dropdown-menu a:hover {
+  color: #5EEAD4;
+}
+
+html[data-theme="dark"] .about-page-wrapper .mobile-menu-btn {
+  color: #E2E8F0;
+}
+
+html[data-theme="dark"] .about-page-wrapper .mobile-dropdown-menu {
+  background: #172B2B;
+  border-color: #294343;
+}
+
+/* Hero */
+html[data-theme="dark"] .about-page-wrapper .about-hero {
+  background: linear-gradient(110deg, #123D39, #102222);
+}
+
+html[data-theme="dark"] .about-page-wrapper .hero-title,
+html[data-theme="dark"] .about-page-wrapper .section-heading {
+  color: #F1F5F9;
+}
+
+html[data-theme="dark"] .about-page-wrapper .hero-description,
+html[data-theme="dark"] .about-page-wrapper .story-paragraph,
+html[data-theme="dark"] .about-page-wrapper .wwd-description {
+  color: #A7B8B8;
+}
+
+html[data-theme="dark"] .about-page-wrapper .badge-pill {
+  background: #164E45;
+  color: #5EEAD4;
+}
+
+html[data-theme="dark"] .about-page-wrapper .btn-primary-pill,
+html[data-theme="dark"] .about-page-wrapper .btn-get-started {
+  background: #0D9488;
+}
+
+html[data-theme="dark"] .about-page-wrapper .btn-primary-pill:hover,
+html[data-theme="dark"] .about-page-wrapper .btn-get-started:hover {
+  background: #0F766E;
+}
+
+/* Our Story */
+html[data-theme="dark"] .about-page-wrapper .our-story-section,
+html[data-theme="dark"] .about-page-wrapper .mission-vision-section,
+html[data-theme="dark"] .about-page-wrapper .core-values-section,
+html[data-theme="dark"] .about-page-wrapper .cta-wrapper {
+  background: #102222;
+}
+
+/* Mission and Vision */
+html[data-theme="dark"] .about-page-wrapper .mv-card,
+html[data-theme="dark"] .about-page-wrapper .value-card {
+  background: #172B2B;
+  border-color: #294343;
+}
+
+html[data-theme="dark"] .about-page-wrapper .mv-card-body h3,
+html[data-theme="dark"] .about-page-wrapper .value-card h3 {
+  color: #F1F5F9;
+}
+
+html[data-theme="dark"] .about-page-wrapper .mv-card-body p,
+html[data-theme="dark"] .about-page-wrapper .value-card p {
+  color: #A7B8B8;
+}
+
+html[data-theme="dark"] .about-page-wrapper .mv-icon-box {
+  background: #0D9488;
+}
+
+/* What We Do */
+html[data-theme="dark"] .about-page-wrapper .what-we-do-section {
+  background: #132B2A;
+}
+
+html[data-theme="dark"] .about-page-wrapper .calendar-illustration-card {
+  background: #172B2B;
+  border-color: #345050;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+}
+
+html[data-theme="dark"] .about-page-wrapper .illus-header {
+  border-bottom-color: #345050;
+}
+
+html[data-theme="dark"] .about-page-wrapper .illus-title {
+  color: #F1F5F9;
+}
+
+html[data-theme="dark"] .about-page-wrapper .illus-icon-teal {
+  color: #5EEAD4;
+}
+
+html[data-theme="dark"] .about-page-wrapper .illus-check-item {
+  background: #203838;
+  border-color: #345050;
+  color: #CBD5E1;
+}
+
+html[data-theme="dark"] .about-page-wrapper .illus-check-item.checked {
+  background: #164E45;
+  color: #5EEAD4;
+}
+
+/* Core Values */
+html[data-theme="dark"] .about-page-wrapper .value-icon-box {
+  background: #164E45;
+  color: #5EEAD4;
+}
+
+/* Call to Action */
+html[data-theme="dark"] .about-page-wrapper .cta-banner {
+  background: #0F766E;
+}
+
+/* Footer */
+html[data-theme="dark"] .about-page-wrapper .footer-light {
+  background: linear-gradient(180deg, #172B2B 0%, #123D39 100%);
+}
+
+html[data-theme="dark"] .about-page-wrapper .footer-divider {
+  background: #345050;
+}
+
+html[data-theme="dark"] .about-page-wrapper .footer-socials a {
+  color: #CBD5E1;
+}
+
+html[data-theme="dark"] .about-page-wrapper .footer-socials a:hover {
+  color: #5EEAD4;
+}
+
+html[data-theme="dark"] .about-page-wrapper .footer-right {
+  color: #A7B8B8;
+}
+
+
+
         /* RESPONSIVE MEDIA QUERIES */
         @media (max-width: 992px) {
           .nav-links {

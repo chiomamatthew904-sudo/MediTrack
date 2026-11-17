@@ -91,17 +91,22 @@ export default function AppointmentHistory() {
     return filteredHistory.slice(start, start + recordsPerPage);
   }, [filteredHistory, currentPage]);
 
-  // Metric Calculations from context history
-  const totalPastCount = pastAppointments.length;
-  const completedCount = pastAppointments.filter(
-    (a) => (a.status || '').toLowerCase() === 'completed'
-  ).length;
-  const missedCount = pastAppointments.filter(
-    (a) => (a.status || '').toLowerCase() === 'missed'
-  ).length;
-  const cancelledCount = pastAppointments.filter(
-    (a) => (a.status || '').toLowerCase() === 'cancelled'
-  ).length;
+   
+// Metric Calculations from context history
+const totalPastCount = pastAppointments.length;
+
+const completedCount = pastAppointments.filter(
+  (a) => (a.status || '').trim().toLowerCase() === 'completed'
+).length;
+
+const missedCount = pastAppointments.filter(
+  (a) => (a.status || '').trim().toLowerCase() === 'missed'
+).length;
+
+const cancelledCount = pastAppointments.filter(
+  (a) => (a.status || '').trim().toLowerCase() === 'cancelled'
+).length;
+
 
   // Status Badge Styling Helper
   const getStatusBadgeClass = (status) => {
@@ -1351,6 +1356,194 @@ export default function AppointmentHistory() {
         .btn-modal-close:hover {
           background: #066658;
         }
+
+
+/* ==================================
+   DARK MODE - APPOINTMENT HISTORY
+================================== */
+
+html[data-theme="dark"] .history-page-container {
+  color: #E2E8F0;
+}
+
+/* Page header */
+html[data-theme="dark"] .page-header-section,
+html[data-theme="dark"] .metric-card,
+html[data-theme="dark"] .controls-toolbar,
+html[data-theme="dark"] .table-container-card,
+html[data-theme="dark"] .health-record-banner {
+  background: #172B2B;
+  border-color: #294343;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+html[data-theme="dark"] .page-title,
+html[data-theme="dark"] .metric-value,
+html[data-theme="dark"] .metric-label,
+html[data-theme="dark"] .banner-text h2 {
+  color: #F1F5F9;
+}
+
+html[data-theme="dark"] .page-description,
+html[data-theme="dark"] .metric-sub,
+html[data-theme="dark"] .banner-text p {
+  color: #A7B8B8;
+}
+
+/* Search and filters */
+html[data-theme="dark"] .search-input,
+html[data-theme="dark"] .filter-select {
+  background: #203838;
+  border-color: #345050;
+  color: #E2E8F0;
+}
+
+html[data-theme="dark"] .search-input::placeholder {
+  color: #94A3A3;
+}
+
+html[data-theme="dark"] .search-input:focus,
+html[data-theme="dark"] .filter-select:focus {
+  background: #203838;
+  border-color: #0D9488;
+}
+
+html[data-theme="dark"] .search-icon,
+html[data-theme="dark"] .filter-icon {
+  color: #A7B8B8;
+}
+
+html[data-theme="dark"] .filter-select option {
+  background: #172B2B;
+  color: #E2E8F0;
+}
+
+/* History table */
+html[data-theme="dark"] .appointments-table th {
+  background: #203838;
+  color: #A7B8B8;
+  border-bottom-color: #345050;
+}
+
+html[data-theme="dark"] .appointments-table td {
+  color: #CBD5E1;
+  border-bottom-color: #294343;
+}
+
+html[data-theme="dark"] .appointments-table tr:hover td {
+  background: #203838;
+}
+
+/* View details button */
+html[data-theme="dark"] .btn-view-details {
+  background: #164E45;
+  color: #5EEAD4;
+}
+
+html[data-theme="dark"] .btn-view-details:hover {
+  background: #205E52;
+}
+
+/* Empty state */
+html[data-theme="dark"] .empty-state-content {
+  color: #A7B8B8;
+}
+
+html[data-theme="dark"] .empty-icon {
+  color: #647878;
+}
+
+/* Pagination */
+html[data-theme="dark"] .table-footer {
+  background: #172B2B;
+  border-top-color: #294343;
+}
+
+html[data-theme="dark"] .record-count-text {
+  color: #A7B8B8;
+}
+
+html[data-theme="dark"] .page-nav-btn,
+html[data-theme="dark"] .page-num-btn {
+  background: #203838;
+  border-color: #345050;
+  color: #CBD5E1;
+}
+
+html[data-theme="dark"] .page-num-btn.active {
+  background: #087F6E;
+  border-color: #087F6E;
+  color: #FFFFFF;
+}
+
+html[data-theme="dark"] .page-nav-btn:hover:not(:disabled),
+html[data-theme="dark"] .page-num-btn:hover:not(.active) {
+  background: #294343;
+}
+
+/* Health record banner */
+html[data-theme="dark"] .banner-icon-circle {
+  background: #203F3B;
+  color: #5EEAD4;
+}
+
+html[data-theme="dark"] .btn-view-calendar {
+  background: #203838;
+  border-color: #345050;
+  color: #5EEAD4;
+}
+
+html[data-theme="dark"] .btn-view-calendar:hover {
+  background: #294343;
+}
+
+/* Appointment details modal */
+html[data-theme="dark"] .modal-container {
+  background: #172B2B;
+  border-color: #345050;
+  color: #E2E8F0;
+}
+
+html[data-theme="dark"] .modal-header h2 {
+  color: #F1F5F9;
+}
+
+html[data-theme="dark"] .close-modal-btn {
+  color: #CBD5E1;
+}
+
+html[data-theme="dark"] .close-modal-btn:hover {
+  background: #294343;
+}
+
+html[data-theme="dark"] .modal-status-banner,
+html[data-theme="dark"] .modal-notes-section {
+  background: #203838;
+  border-color: #345050;
+  color: #CBD5E1;
+}
+
+html[data-theme="dark"] .modal-date-display,
+html[data-theme="dark"] .detail-value,
+html[data-theme="dark"] .modal-notes-section strong {
+  color: #E2E8F0;
+}
+
+html[data-theme="dark"] .detail-label {
+  color: #A7B8B8;
+}
+
+html[data-theme="dark"] .detail-inline-icon,
+html[data-theme="dark"] .text-teal {
+  color: #5EEAD4;
+}
+
+html[data-theme="dark"] .modal-footer {
+  border-top-color: #345050;
+}
+
+/* Preserve status badge and primary button colours */
+
 
         /* RESPONSIVE MEDIA QUERIES */
         @media (max-width: 992px) {

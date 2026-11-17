@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   User,
   ShieldCheck,
@@ -22,12 +22,55 @@ import { useProfile } from '../../context/profilecontext';
 import { useNotifications } from '../../context/notificationcontext';
 
 export default function ProfilePage() {
-  const { profile, updateProfile } = useProfile();
+  // Convert dates to the format required by Supabase (YYYY-MM-DD)
+const formatDateForDatabase = (dateValue) => {
+  if (!dateValue) return null;
+
+  // Already in YYYY-MM-DD format
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
+    return dateValue;
+  }
+
+  // Convert DD/MM/YYYY to YYYY-MM-DD
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateValue)) {
+    const [day, month, year] = dateValue.split('/');
+    return `${year}-${month}-${day}`;
+  }
+
+  return dateValue;
+};
+
+// Convert dates to a format suitable for an HTML date input
+const formatDateForInput = (dateValue) => {
+  if (!dateValue) return '';
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
+    return dateValue;
+  }
+
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateValue)) {
+    const [day, month, year] = dateValue.split('/');
+    return `${year}-${month}-${day}`;
+  }
+
+  return '';
+};
+
+  const {
+  profile,
+  updateProfile,
+  uploadAvatar,
+  updatePassword,
+  updateTheme
+} = useProfile();
   const { reminderSettings, updateSettings } = useNotifications();
 
   // Personal Info Edit State
   const [isEditingInfo, setIsEditingInfo] = useState(false);
   const [formData, setFormData] = useState(profile);
+  useEffect(() => {
+  setFormData(profile);
+}, [profile]);
   const [infoSuccess, setInfoSuccess] = useState(false);
 
   // Password Change Modal State
@@ -53,34 +96,69 @@ export default function ProfilePage() {
   const [prefSuccess, setPrefSuccess] = useState(false);
 
   // Handle Profile Picture Change
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      updateProfile({ avatar: imageUrl });
-      setFormData((prev) => ({ ...prev, avatar: imageUrl }));
+  const handleImageChange = async (e) => {
+    const file = e.target.files?.[0];
+
+    if (!file) return;
+
+    const result = await uploadAvatar(file);
+
+    if (!result.success) {
+      alert(result.error || 'Failed to upload profile picture.');
+    } else {
+      alert('Profile picture updated successfully.');
     }
+
+    // Allow the same image to be selected again if needed
+    e.target.value = '';
   };
 
   // Handle Personal Info Save
-  const handleSaveInfo = (e) => {
-    e.preventDefault();
-    if (!formData.fullName.trim() || !formData.email.trim()) {
-      alert('Full Name and Email are required.');
+const handleSaveInfo = async (e) => {
+  e.preventDefault();
+
+  if (!formData.fullName.trim()) {
+    alert('Full Name is required.');
+    return;
+  }
+
+  try {
+    const result = await updateProfile({
+      fullName: formData.fullName,
+      phone: formData.phone || '',
+      dateOfBirth: formatDateForDatabase(formData.dateOfBirth),
+      gender: formData.gender || ''
+    });
+
+    if (!result.success) {
+      alert(result.error || 'Failed to update your profile.');
       return;
     }
-    updateProfile(formData);
+
     setIsEditingInfo(false);
     setInfoSuccess(true);
+
     setTimeout(() => setInfoSuccess(false), 3000);
-  };
+
+  } catch (error) {
+    console.error('Profile update error:', error);
+    alert(error.message || 'Something went wrong while updating your profile.');
+  }
+};
+
 
   // Handle Password Update Submission
-  const handlePasswordSubmit = (e) => {
+  const handlePasswordSubmit = async (e) => {
     e.preventDefault();
-    setPasswordError('');
 
-    if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
+    setPasswordError('');
+    setPasswordSuccess(false);
+
+    if (
+      !passwordForm.currentPassword ||
+      !passwordForm.newPassword ||
+      !passwordForm.confirmPassword
+    ) {
       setPasswordError('All password fields must be completed.');
       return;
     }
@@ -95,18 +173,49 @@ export default function ProfilePage() {
       return;
     }
 
-    setPasswordSuccess(true);
-    setTimeout(() => {
-      setPasswordSuccess(false);
-      setShowPasswordModal(false);
-      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
-    }, 2500);
+    if (passwordForm.currentPassword === passwordForm.newPassword) {
+      setPasswordError('Your new password must be different from your current password.');
+      return;
+    }
+
+    try {
+      const result = await updatePassword(
+        passwordForm.currentPassword,
+        passwordForm.newPassword
+      );
+
+      if (!result.success) {
+        setPasswordError(result.error || 'Failed to update password.');
+        return;
+      }
+
+      setPasswordSuccess(true);
+
+      setTimeout(() => {
+        setPasswordSuccess(false);
+        setShowPasswordModal(false);
+        setPasswordForm({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: ''
+        });
+      }, 2500);
+
+    } catch (error) {
+      console.error('Password update error:', error);
+      setPasswordError(error.message || 'Something went wrong.');
+    }
   };
 
-  // Handle Preference Save (Syncs back to NotificationContext)
-  const handleSavePreferences = (e) => {
+
+  
+  // Handle Preference Save
+  const handleSavePreferences = async (e) => {
     e.preventDefault();
-    updateSettings({
+
+    setPrefSuccess(false);
+
+    const result = await updateSettings({
       ...reminderSettings,
       enabled: prefForm.appointmentReminders,
       channels: {
@@ -115,9 +224,27 @@ export default function ProfilePage() {
         browser: prefForm.browser
       }
     });
+
+    if (!result.success) {
+      alert(result.error || 'Failed to save notification preferences.');
+      return;
+    }
+
     setPrefSuccess(true);
+
     setTimeout(() => setPrefSuccess(false), 3000);
   };
+
+
+  // Handle theme selection
+  const handleThemeChange = async (newTheme) => {
+  const result = await updateTheme(newTheme);
+
+  if (!result.success) {
+    alert(result.error || 'Failed to update theme preference.');
+  }
+};
+
 
   return (
     <div className="profile-page-container">
@@ -250,26 +377,38 @@ export default function ProfilePage() {
                   />
                 </div>
 
-                <div className="form-group">
+                 <div className="form-group">
                   <label>Date of Birth</label>
-                  <input
-                    type="text"
-                    value={formData.dateOfBirth}
-                    onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
-                  />
+                    <input
+                     type="date"
+                     value={formatDateForInput(formData.dateOfBirth)}
+                    onChange={(e) =>
+                   setFormData({
+                   ...formData,
+                  dateOfBirth: e.target.value
+                  })
+                  }
+                 />
                 </div>
 
-                <div className="form-group">
+                  <div className="form-group">
                   <label>Gender</label>
                   <select
-                    value={formData.gender}
-                    onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                  >
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Prefer not to say">Prefer not to say</option>
-                  </select>
+                   value={formData.gender || ''}
+                    onChange={(e) =>
+                  setFormData({
+                  ...formData,
+                  gender: e.target.value
+                 })
+                 }
+                 >
+                <option value="">Select Gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Prefer not to say">Prefer not to say</option>
+                </select>
                 </div>
+             
 
                 <div className="form-actions-row">
                   <button type="submit" className="btn-primary-save">
@@ -331,14 +470,50 @@ export default function ProfilePage() {
 
           {/* HEALTHCARE NOTICE CARD */}
           <div className="healthcare-notice-card">
-            <div className="notice-icon-box">
-              <Info size={20} />
-            </div>
-            <p>
-              MediTrack is here to help you manage your appointments. For medical concerns, please contact your healthcare provider.
-            </p>
+          <div className="notice-icon-box">
+          <Info size={20} />
+          </div>
+          <p>
+          You enter your appointment details in MediTrack to keep them organised and receive reminders. MediTrack does not verify appointments with healthcare facilities or provide medical advice. For medical concerns or confirmation of appointment details, please contact your healthcare provider.
+          </p>
           </div>
         </div>
+
+
+        {/* APPEARANCE SECTION */}
+<div className="section-card">
+  <div className="card-header-flex">
+    <div className="card-title-group">
+      <h2>Appearance</h2>
+    </div>
+  </div>
+
+  <p className="card-subtitle">
+    Choose how you want MediTrack to look.
+  </p>
+
+  <div className="theme-options">
+    <button
+      type="button"
+      className={`theme-option ${profile.theme === 'light' ? 'active' : ''}`}
+      onClick={() => handleThemeChange('light')}
+    >
+      <span>☀️</span>
+      <strong>Light Mode</strong>
+      <small>Bright and clean appearance</small>
+    </button>
+
+    <button
+      type="button"
+      className={`theme-option ${profile.theme === 'dark' ? 'active' : ''}`}
+      onClick={() => handleThemeChange('dark')}
+    >
+      <span>🌙</span>
+      <strong>Dark Mode</strong>
+      <small>Comfortable in low light</small>
+    </button>
+  </div>
+</div>
 
         {/* RIGHT COLUMN: ACCOUNT SECURITY & NOTIFICATION PREFERENCES */}
         <div className="right-column">
@@ -563,7 +738,7 @@ export default function ProfilePage() {
 
               {passwordSuccess && (
                 <div className="success-feedback-banner">
-                  <CheckCircle2 size={16} /> Password updated successfully (Demo Mode)!
+                  <CheckCircle2 size={16} /> Password updated successfully!
                 </div>
               )}
 
@@ -1272,6 +1447,224 @@ export default function ProfilePage() {
         }
         .btn-secondary:hover { background: #E2E8F0; }
 
+           /* APPEARANCE SETTINGS */
+.theme-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.theme-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 16px;
+  background: #F8FCFC;
+  border: 2px solid #E2E8F0;
+  border-radius: 14px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+}
+
+.theme-option span {
+  font-size: 24px;
+}
+
+.theme-option strong {
+  color: #0F2926;
+  font-size: 13px;
+}
+
+.theme-option small {
+  color: #64748B;
+  font-size: 11px;
+}
+
+.theme-option.active {
+  border-color: #087F6E;
+  background: #E8F8F5;
+}
+
+@media (max-width: 480px) {
+  .theme-options {
+    grid-template-columns: 1fr;
+  }
+}  
+
+
+/* ==================================
+   DARK MODE - PATIENT PROFILE
+================================== */
+
+html[data-theme="dark"] .profile-page-container {
+  color: #E2E8F0;
+}
+
+/* Header and profile overview */
+html[data-theme="dark"] .page-header-section,
+html[data-theme="dark"] .profile-overview-card,
+html[data-theme="dark"] .section-card {
+  background: #172B2B;
+  border-color: #294343;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+html[data-theme="dark"] .page-title,
+html[data-theme="dark"] .profile-user-meta h2,
+html[data-theme="dark"] .card-title-group h2,
+html[data-theme="dark"] .info-value,
+html[data-theme="dark"] .security-block-item h4,
+html[data-theme="dark"] .acc-info-title-row h4,
+html[data-theme="dark"] .acc-info-item strong,
+html[data-theme="dark"] .pref-text strong {
+  color: #F1F5F9;
+}
+
+html[data-theme="dark"] .page-description,
+html[data-theme="dark"] .meta-row,
+html[data-theme="dark"] .info-label-group,
+html[data-theme="dark"] .card-subtitle,
+html[data-theme="dark"] .field-hint,
+html[data-theme="dark"] .security-block-item p,
+html[data-theme="dark"] .acc-info-item span,
+html[data-theme="dark"] .pref-text p {
+  color: #A7B8B8;
+}
+
+/* Profile avatar */
+html[data-theme="dark"] .avatar-wrapper {
+  background: #203F3B;
+  border-color: #0D9488;
+}
+
+html[data-theme="dark"] .avatar-placeholder {
+  color: #5EEAD4;
+}
+
+/* Personal information */
+html[data-theme="dark"] .info-row {
+  border-bottom-color: #294343;
+}
+
+html[data-theme="dark"] .form-group label {
+  color: #CBD5E1;
+}
+
+html[data-theme="dark"] .form-group input,
+html[data-theme="dark"] .form-group select,
+html[data-theme="dark"] .pass-input-wrapper input {
+  background: #203838;
+  border-color: #345050;
+  color: #E2E8F0;
+}
+
+html[data-theme="dark"] .form-group input:focus,
+html[data-theme="dark"] .form-group select:focus,
+html[data-theme="dark"] .pass-input-wrapper input:focus {
+  background: #294343;
+  border-color: #0D9488;
+}
+
+html[data-theme="dark"] .form-group select option {
+  background: #172B2B;
+  color: #E2E8F0;
+}
+
+/* Healthcare notice */
+html[data-theme="dark"] .healthcare-notice-card {
+  background: #1C3A37;
+  border-color: #285B53;
+  color: #E2E8F0;
+}
+
+html[data-theme="dark"] .healthcare-notice-card p {
+  color: #CBD5E1;
+}
+
+/* Account security */
+html[data-theme="dark"] .security-block-item,
+html[data-theme="dark"] .preference-toggle-item {
+  background: #203838;
+  border-color: #345050;
+}
+
+html[data-theme="dark"] .account-info-box {
+  background: #1C3A37;
+  border-color: #285B53;
+}
+
+/* Appearance selector */
+html[data-theme="dark"] .theme-option {
+  background: #203838;
+  border-color: #345050;
+}
+
+html[data-theme="dark"] .theme-option strong {
+  color: #F1F5F9;
+}
+
+html[data-theme="dark"] .theme-option small {
+  color: #A7B8B8;
+}
+
+html[data-theme="dark"] .theme-option.active {
+  background: #164E45;
+  border-color: #0D9488;
+}
+
+/* Section dividers */
+html[data-theme="dark"] .card-header-flex {
+  border-bottom-color: #345050;
+}
+
+/* Password modal */
+html[data-theme="dark"] .modal-container {
+  background: #172B2B;
+  border-color: #345050;
+  color: #E2E8F0;
+}
+
+html[data-theme="dark"] .modal-header h2 {
+  color: #F1F5F9;
+}
+
+html[data-theme="dark"] .modal-subtitle {
+  color: #A7B8B8;
+}
+
+html[data-theme="dark"] .close-modal-btn,
+html[data-theme="dark"] .pass-toggle-btn {
+  color: #CBD5E1;
+}
+
+html[data-theme="dark"] .close-modal-btn:hover {
+  background: #294343;
+}
+
+html[data-theme="dark"] .modal-footer-buttons {
+  border-top-color: #345050;
+}
+
+html[data-theme="dark"] .btn-secondary,
+html[data-theme="dark"] .btn-secondary-cancel {
+  background: #294343;
+  color: #E2E8F0;
+}
+
+html[data-theme="dark"] .btn-secondary:hover,
+html[data-theme="dark"] .btn-secondary-cancel:hover {
+  background: #345050;
+}
+
+/* Teal icons and links */
+html[data-theme="dark"] .text-teal {
+  color: #5EEAD4;
+}
+
+/* Preserve success, error and security status colours */
+
         /* RESPONSIVE MEDIA QUERIES */
         @media (max-width: 992px) {
           .page-header-section {
@@ -1295,6 +1688,7 @@ export default function ProfilePage() {
           .acc-info-grid {
             grid-template-columns: 1fr;
           }
+
         }
       `}</style>
     </div>

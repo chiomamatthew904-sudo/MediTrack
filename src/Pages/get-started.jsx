@@ -745,6 +745,126 @@ export default function GetStarted() {
           background: #066658;
         }
 
+
+
+
+/* ==================================
+   DARK MODE - GET STARTED PAGE
+================================== */
+
+html[data-theme="dark"] .register-page-wrapper {
+  background: #102222;
+}
+
+/* Main registration container */
+html[data-theme="dark"] .register-split-container {
+  background: #172B2B;
+  border-color: #294343;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.25);
+}
+
+/* Preserve hero image and overlay */
+html[data-theme="dark"] .register-hero-section {
+  background-color: #123D39;
+}
+
+/* Registration form section */
+html[data-theme="dark"] .register-form-section {
+  background: #172B2B;
+}
+
+html[data-theme="dark"] .create-heading {
+  color: #F1F5F9;
+}
+
+html[data-theme="dark"] .create-subtext {
+  color: #A7B8B8;
+}
+
+/* Form labels */
+html[data-theme="dark"] .form-group label {
+  color: #E2E8F0;
+}
+
+/* Input fields */
+html[data-theme="dark"] .input-with-icon input,
+html[data-theme="dark"] .standalone-input {
+  background: #203838;
+  border-color: #345050;
+  color: #E2E8F0;
+}
+
+html[data-theme="dark"] .input-with-icon input::placeholder,
+html[data-theme="dark"] .standalone-input::placeholder {
+  color: #94A3B8;
+}
+
+html[data-theme="dark"] .input-with-icon input:focus,
+html[data-theme="dark"] .standalone-input:focus {
+  background: #294343;
+  border-color: #0D9488;
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+}
+
+html[data-theme="dark"] .input-prefix-icon {
+  color: #94A3B8;
+}
+
+html[data-theme="dark"] .password-toggle-btn {
+  color: #A7B8B8;
+}
+
+/* Terms and conditions */
+html[data-theme="dark"] .checkbox-label {
+  color: #CBD5E1;
+}
+
+html[data-theme="dark"] .checkbox-label input[type="checkbox"] {
+  accent-color: #0D9488;
+}
+
+html[data-theme="dark"] .checkbox-label a,
+html[data-theme="dark"] .login-prompt a {
+  color: #5EEAD4;
+}
+
+/* Registration button */
+html[data-theme="dark"] .btn-register,
+html[data-theme="dark"] .btn-back-login {
+  background: #0D9488;
+}
+
+html[data-theme="dark"] .btn-register:hover,
+html[data-theme="dark"] .btn-back-login:hover {
+  background: #0F766E;
+}
+
+html[data-theme="dark"] .login-prompt {
+  color: #A7B8B8;
+}
+
+/* Confirmation screen */
+html[data-theme="dark"] .confirmation-icon-circle {
+  background: #164E45;
+}
+
+html[data-theme="dark"] .success-check-icon {
+  color: #5EEAD4;
+}
+
+html[data-theme="dark"] .confirmation-heading {
+  color: #F1F5F9;
+}
+
+html[data-theme="dark"] .confirmation-subtext {
+  color: #A7B8B8;
+}
+
+/* Preserve validation error colours */
+
+
+
+
         /* RESPONSIVE MEDIA QUERIES */
         @media (max-width: 992px) {
           .register-split-container {

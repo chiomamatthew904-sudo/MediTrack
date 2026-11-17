@@ -14,13 +14,15 @@ import {
   Shield
 } from 'lucide-react';
 import { useNotifications } from '../../context/notificationcontext';
+import { useProfile } from '../../context/profilecontext';
 
 // Import local project assets
 import medimg from '../../assets/medimg.jpg';
-import patientAvatar from '../../assets/patimg2.jpg';
+
 
 export default function DashboardLayout() {
-  const { unreadCount } = useNotifications();
+ const { unreadCount } = useNotifications();
+ const { profile } = useProfile();
 
   // State for desktop sidebar expansion/collapse and mobile menu drawer
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -144,8 +146,18 @@ export default function DashboardLayout() {
 
             {/* 9. Profile Section navigating to /dashboard/profile */}
             <Link to="/dashboard/profile" className="profile-menu-link" aria-label="My Profile">
-              <img src={patientAvatar} alt="Miriam Profile" className="top-profile-avatar" />
-            </Link>
+            {profile.avatar ? (
+           <img
+            src={profile.avatar}
+            alt="Patient Profile"
+            className="top-profile-avatar"
+           />
+           ) : (
+           <div className="top-profile-avatar top-avatar-placeholder">
+           <User size={22} />
+           </div>
+         )}
+           </Link>
           </div>
         </header>
 
@@ -443,6 +455,14 @@ export default function DashboardLayout() {
           border: 2px solid #087F6E;
         }
 
+        .top-avatar-placeholder {
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         background: #E8F8F5;
+         color: #087F6E;
+        }
+
         .outlet-container {
           padding: 32px;
           flex: 1;
@@ -450,6 +470,89 @@ export default function DashboardLayout() {
 
         .mobile-backdrop {
           display: none;
+        }
+
+                /* ==================================
+           DARK MODE - PATIENT DASHBOARD LAYOUT
+        ================================== */
+
+        html[data-theme="dark"] .dashboard-layout-wrapper {
+          background: #102222;
+          color: #E2E8F0;
+        }
+
+        /* Sidebar */
+        html[data-theme="dark"] .dashboard-sidebar {
+          background: #123D39;
+          box-shadow: 4px 0 20px rgba(0, 0, 0, 0.2);
+        }
+
+        html[data-theme="dark"] .sidebar-logo-subtitle {
+          color: #99F6E4;
+        }
+
+        html[data-theme="dark"] .nav-item {
+          color: #CBD5E1;
+        }
+
+        html[data-theme="dark"] .nav-item:hover {
+          background: rgba(255, 255, 255, 0.12);
+          color: #FFFFFF;
+        }
+
+        html[data-theme="dark"] .nav-item.active {
+          background: #0D9488;
+          color: #FFFFFF;
+        }
+
+        html[data-theme="dark"] .sidebar-footer {
+          border-top-color: rgba(255, 255, 255, 0.2);
+        }
+
+        html[data-theme="dark"] .sidebar-trust-box {
+          background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Main navigation bar */
+        html[data-theme="dark"] .top-navbar {
+          background: #172B2B;
+          border-bottom-color: #294343;
+        }
+
+        html[data-theme="dark"] .hamburger-btn {
+          color: #E2E8F0;
+        }
+
+        html[data-theme="dark"] .hamburger-btn:hover {
+          background: #294343;
+        }
+
+        html[data-theme="dark"] .nav-icon-btn {
+          background: #203838;
+          border-color: #345050;
+          color: #E2E8F0;
+        }
+
+        html[data-theme="dark"] .nav-icon-btn:hover {
+          background: #294343;
+        }
+
+        html[data-theme="dark"] .notification-badge {
+          border-color: #172B2B;
+        }
+
+        html[data-theme="dark"] .top-profile-avatar {
+          border-color: #0D9488;
+        }
+
+        html[data-theme="dark"] .top-avatar-placeholder {
+          background: #203F3B;
+          color: #5EEAD4;
+        }
+
+        /* Main page background */
+        html[data-theme="dark"] .outlet-container {
+          background: #102222;
         }
 
         /* Responsive Media Queries for Mobile/Tablet */
