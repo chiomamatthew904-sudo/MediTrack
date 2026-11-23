@@ -13,11 +13,11 @@ import {
   CalendarDays
 } from 'lucide-react';
 
-import patientAvatar from '../../assets/patimg2.jpg';
 import doctorAvatar from '../../assets/patdocimg.jpg';
 
 // IMPORT SUPABASE CLIENT
 import { supabase } from '../../supabaseClient';
+import { useProfile } from '../../context/profilecontext';
 
 // Get today's date using the patient's local timezone
 function getLocalDateString() {
@@ -31,6 +31,8 @@ function getLocalDateString() {
 }
 
 export default function PatientDashboard() {
+  const { profile } = useProfile();
+
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -87,16 +89,36 @@ export default function PatientDashboard() {
     <div className="patient-dashboard">
       
       {/* WELCOME BANNER */}
-      <div className="welcome-banner">
-        <div className="welcome-text-group">
-          <div className="welcome-avatar-wrapper">
-            <img src={patientAvatar} alt="Chioma" className="welcome-patient-avatar" />
-          </div>
-          <div>
-            <h1 className="welcome-heading">Welcome back, Chioma!</h1>
-            <p className="welcome-subtext">Here's an overview of your health journey.</p>
-          </div>
+<div className="welcome-banner">
+  <div className="welcome-text-group">
+
+    {/* PATIENT AVATAR */}
+    <div className="welcome-avatar-wrapper">
+      {profile?.avatar ? (
+        <img
+          src={profile.avatar}
+          alt="Patient profile"
+          className="welcome-patient-avatar"
+        />
+      ) : (
+        <div className="welcome-avatar-placeholder">
+          {profile?.fullName?.trim().charAt(0).toUpperCase() || 'P'}
         </div>
+      )}
+    </div>
+
+    {/* PATIENT WELCOME TEXT */}
+    <div>
+      <h1 className="welcome-heading">
+        Welcome back, {profile?.fullName?.trim().split(' ')[0] || 'Patient'}!
+      </h1>
+
+      <p className="welcome-subtext">
+        Here's an overview of your health journey.
+      </p>
+    </div>
+
+  </div>
 
         <div className="banner-promo-badge">
           <div className="promo-badge-icon">
@@ -357,6 +379,19 @@ export default function PatientDashboard() {
           margin-bottom: 4px;
           letter-spacing: -0.02em;
         }
+
+        .welcome-avatar-placeholder {
+          width: 100%;
+          height: 100%;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: #d9f0eb;
+          color: #168574;
+          font-size: 24px;
+          font-weight: 600;
+     }
 
         .welcome-subtext {
           font-size: 14px;

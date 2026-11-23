@@ -87,7 +87,12 @@ useEffect(() => {
 
     setLoading(true);
     setError('');
-    setUser(currentUser);
+
+    // Clear the previous user's profile data
+    // before loading the newly authenticated user's profile
+      setProfile(emptyProfile);
+
+      setUser(currentUser);
 
     try {
       const { data, error: fetchError } = await supabase

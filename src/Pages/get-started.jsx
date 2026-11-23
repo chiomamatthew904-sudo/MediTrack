@@ -36,6 +36,9 @@ export default function GetStarted() {
   });
 
   const [showPassword, setShowPassword] = useState(false);
+  const [emailFocused, setEmailFocused] = useState(false);
+  const [passwordFocused, setPasswordFocused] = useState(false);
+  const [confirmPasswordFocused, setConfirmPasswordFocused] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
@@ -218,7 +221,12 @@ export default function GetStarted() {
                   <p className="create-subtext">Join MediTrack and take control of your healthcare appointments.</p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="auth-form" noValidate>
+                <form
+                onSubmit={handleSubmit}
+                className="auth-form"
+                noValidate
+                autoComplete="off"
+                >
                   
                   {/* First Name & Last Name Row */}
                   <div className="form-row">
@@ -233,6 +241,7 @@ export default function GetStarted() {
                           placeholder="Enter first name"
                           value={formData.firstName}
                           onChange={handleInputChange}
+                           autoComplete="off"
                         />
                       </div>
                       {errors.firstName && <span className="error-text">{errors.firstName}</span>}
@@ -248,6 +257,7 @@ export default function GetStarted() {
                         value={formData.lastName}
                         onChange={handleInputChange}
                         className="standalone-input"
+                         autoComplete="off"
                       />
                       {errors.lastName && <span className="error-text">{errors.lastName}</span>}
                     </div>
@@ -258,14 +268,19 @@ export default function GetStarted() {
                     <label htmlFor="email">Email Address</label>
                     <div className="input-with-icon">
                       <Mail size={18} className="input-prefix-icon" />
-                      <input
-                        type="email"
-                        id="email"
-                        name="email"
-                        placeholder="Enter your email address"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                      />
+                     <input
+                     type="email"
+                     id="email"
+                     name="email"
+                     placeholder="Enter your email address"
+                     value={formData.email}
+                     onChange={handleInputChange}
+                     autoComplete="new-password"
+                     autoCapitalize="none"
+                     spellCheck={false}
+                     readOnly={!emailFocused}
+                     onFocus={() => setEmailFocused(true)}
+                     />
                     </div>
                     {errors.email && <span className="error-text">{errors.email}</span>}
                   </div>
@@ -299,6 +314,9 @@ export default function GetStarted() {
                         placeholder="Create a password"
                         value={formData.password}
                         onChange={handleInputChange}
+                        autoComplete="new-password"
+                        readOnly={!passwordFocused}
+                        onFocus={() => setPasswordFocused(true)}
                       />
                       <button
                         type="button"
@@ -324,6 +342,9 @@ export default function GetStarted() {
                         placeholder="Confirm your password"
                         value={formData.confirmPassword}
                         onChange={handleInputChange}
+                        autoComplete="new-password"
+                        readOnly={!confirmPasswordFocused}
+                        onFocus={() => setConfirmPasswordFocused(true)}
                       />
                       <button
                         type="button"
@@ -346,7 +367,10 @@ export default function GetStarted() {
                         checked={formData.agreeTerms}
                         onChange={handleInputChange}
                       />
-                      <span>I agree to the <a href="#terms">Terms of Service</a> and <a href="#privacy">Privacy Policy</a>.</span>
+                     <span>
+                       I agree to the <Link to="/terms">Terms of Service</Link> and{" "}
+                        <Link to="/privacy">Privacy Policy</Link>.
+                      </span>
                     </label>
                     {errors.agreeTerms && <span className="error-text">{errors.agreeTerms}</span>}
                   </div>

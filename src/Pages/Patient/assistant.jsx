@@ -14,104 +14,50 @@ import {
   Info,
   ArrowRight,
   Menu,
-  X
+  X,
+  Trash2
 } from 'lucide-react';
+import { supabase } from '../../supabaseClient';
+
+
+// Format time using Nigerian timezone
+const formatNigeriaTime = (date) => {
+  return new Intl.DateTimeFormat('en-NG', {
+    timeZone: 'Africa/Lagos',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true
+  }).format(new Date(date));
+};
+
+// Format date and time using Nigerian timezone
+const formatNigeriaDateTime = (date) => {
+  return new Intl.DateTimeFormat('en-NG', {
+    timeZone: 'Africa/Lagos',
+    dateStyle: 'medium',
+    timeStyle: 'short'
+  }).format(new Date(date));
+};
+
 
 export default function AIAssistantPage() {
   const navigate = useNavigate();
   const chatEndRef = useRef(null);
 
-  // Initial Sample Conversations for History Sidebar
-  const [conversations, setConversations] = useState([
-    {
-      id: 1,
-      title: 'My next appointment?',
-      time: 'Nov 4, 2026 • 2:30 PM',
-      messages: [
-        {
-          sender: 'assistant',
-          text: 'Hello! Welcome to MediTrack. I can help you manage your appointments, understand your reminders and navigate the application.\n\nWhat would you like help with today?',
-          time: '2:30 PM'
-        },
-        {
-          sender: 'user',
-          text: 'When is my next appointment?',
-          time: '2:31 PM'
-        },
-        {
-          sender: 'assistant',
-          text: 'You have an upcoming appointment for a Follow-up Checkup at General Hospital scheduled for tomorrow at 10:30 AM.',
-          actionBtn: { label: 'View Calendar', route: '/dashboard/calendar' },
-          time: '2:31 PM'
-        }
-      ]
-    },
-    {
-      id: 2,
-      title: 'Reminder settings',
-      time: 'Nov 3, 2026 • 11:15 AM',
-      messages: [
-        {
-          sender: 'assistant',
-          text: 'Hello! How can I assist you with your notification preferences today?',
-          time: '11:15 AM'
-        },
-        {
-          sender: 'user',
-          text: 'How can I manage my reminders?',
-          time: '11:16 AM'
-        },
-        {
-          sender: 'assistant',
-          text: 'You can enable or disable appointment alerts, change lead times (e.g., 1 day before), and toggle channels (In-app, Email, Browser) under Notifications & Reminders.',
-          actionBtn: { label: 'Go to Reminder Settings', route: '/dashboard/notifications' },
-          time: '11:16 AM'
-        }
-      ]
-    },
-    {
-      id: 3,
-      title: 'Appointment history',
-      time: 'Nov 2, 2026 • 9:20 AM',
-      messages: [
-        {
-          sender: 'assistant',
-          text: 'Welcome back! Looking for your past medical visit records?',
-          time: '9:20 AM'
-        },
-        {
-          sender: 'user',
-          text: 'Where can I find my appointment history?',
-          time: '9:21 AM'
-        },
-        {
-          sender: 'assistant',
-          text: 'All your completed, missed, and cancelled visit records are organized chronologically on the Appointment History page.',
-          actionBtn: { label: 'View Appointment History', route: '/dashboard/history' },
-          time: '9:21 AM'
-        }
-      ]
-    },
-    {
-      id: 4,
-      title: 'Update my profile',
-      time: 'Oct 31, 2026 • 4:10 PM',
-      messages: [
-        {
-          sender: 'assistant',
-          text: 'Hi there! Need help modifying your profile details?',
-          time: '4:10 PM'
-        }
-      ]
-    }
-  ]);
+  // Conversation History
+const [conversations, setConversations] = useState([]);
+const [activeChatId, setActiveChatId] = useState(null);
 
-  // Current Active Conversation State
-  const [activeChatId, setActiveChatId] = useState(1);
-  const [currentMessages, setCurrentMessages] = useState(conversations[0].messages);
-  const [inputMessage, setInputMessage] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const [showHistoryMobile, setShowHistoryMobile] = useState(false);
+const welcomeMessage = {
+  sender: 'assistant',
+  text: 'Hello! Welcome to MediTrack. I can help you manage your appointments, understand your reminders and navigate the application.\n\nWhat would you like help with today?',
+  time: formatNigeriaTime(new Date())
+};
+
+const [currentMessages, setCurrentMessages] = useState([welcomeMessage]);
+const [inputMessage, setInputMessage] = useState('');
+const [isTyping, setIsTyping] = useState(false);
+const [showHistoryMobile, setShowHistoryMobile] = useState(false);
 
   // Auto-scroll chat to latest message
   const scrollToBottom = () => {
@@ -122,92 +68,323 @@ export default function AIAssistantPage() {
     scrollToBottom();
   }, [currentMessages, isTyping]);
 
-  // Handle Switching Conversations
-  const handleSelectConversation = (chat) => {
-    setActiveChatId(chat.id);
-    setCurrentMessages(chat.messages);
-    setShowHistoryMobile(false);
-  };
 
-  // Handle New Chat Reset
-  const handleNewChat = () => {
-    setActiveChatId(null);
-    setCurrentMessages([
-      {
-        sender: 'assistant',
-        text: 'Hello! Welcome to MediTrack. I can help you manage your appointments, understand your reminders and navigate the application.\n\nWhat would you like help with today?',
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+
+  // Load saved conversations from Supabase
+useEffect(() => {
+  const loadChatHistory = async () => {
+    try {
+      const {
+        data: { session },
+        error: sessionError
+      } = await supabase.auth.getSession();
+
+      if (sessionError || !session) return;
+
+      // Get this patient's conversations
+      const { data: savedChats, error: chatError } = await supabase
+        .from('ai_conversations')
+        .select('id, title, created_at, updated_at')
+        .eq('user_id', session.user.id)
+        .order('updated_at', { ascending: false });
+
+      if (chatError) throw chatError;
+
+      if (!savedChats || savedChats.length === 0) return;
+
+      // Get messages belonging to these conversations
+      const chatIds = savedChats.map((chat) => chat.id);
+
+      const { data: savedMessages, error: messageError } = await supabase
+        .from('ai_messages')
+        .select('id, conversation_id, sender, content, created_at')
+        .in('conversation_id', chatIds)
+        .order('created_at', { ascending: true });
+
+      if (messageError) throw messageError;
+
+      // Attach messages to their conversations
+      const formattedChats = savedChats.map((chat) => {
+        const chatMessages = (savedMessages || [])
+          .filter((msg) => msg.conversation_id === chat.id)
+          .map((msg) => ({
+            sender: msg.sender,
+            text: msg.content,
+            time: formatNigeriaTime(msg.created_at)
+          }));
+
+        return {
+          id: chat.id,
+          title: chat.title,
+          time: formatNigeriaDateTime(chat.updated_at),
+          messages: chatMessages
+        };
+      });
+
+      setConversations(formattedChats);
+
+      // Open the most recent conversation
+      if (formattedChats.length > 0) {
+        setActiveChatId(formattedChats[0].id);
+        setCurrentMessages(formattedChats[0].messages);
       }
-    ]);
-    setShowHistoryMobile(false);
+
+    } catch (error) {
+      console.error('Error loading AI chat history:', error.message);
+    }
   };
 
-  // Demo Response Logic for Standard Questions
-  const getDemoResponse = (query) => {
-    const q = query.toLowerCase();
+  loadChatHistory();
+}, []);
 
-    if (q.includes('next appointment') || q.includes('when is my next')) {
-      return {
-        text: 'You can view all your upcoming hospital appointments, dates, and times directly on your Appointments or Calendar page.',
-        actionBtn: { label: 'Go to My Appointments', route: '/dashboard/my-appointment' }
-      };
+
+   // Handle Switching Conversations
+const handleSelectConversation = (chat) => {
+  setActiveChatId(chat.id);
+  setCurrentMessages(chat.messages);
+  setShowHistoryMobile(false);
+};
+
+// Handle New Chat
+const handleNewChat = () => {
+  setActiveChatId(null);
+  setCurrentMessages([{
+    sender: 'assistant',
+    text: 'Hello! Welcome to MediTrack. I can help you manage your appointments, understand your reminders and navigate the application.\n\nWhat would you like help with today?',
+    time: new Date().toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }]);
+  setInputMessage('');
+  setShowHistoryMobile(false);
+};
+
+
+// Delete a conversation and its messages
+const handleDeleteConversation = async (chatId) => {
+  const confirmDelete = window.confirm(
+    'Are you sure you want to delete this conversation? This action cannot be undone.'
+  );
+
+  if (!confirmDelete) return;
+
+  try {
+    // Delete all messages in this conversation
+    const { error: messagesError } = await supabase
+      .from('ai_messages')
+      .delete()
+      .eq('conversation_id', chatId);
+
+    if (messagesError) throw messagesError;
+
+    // Delete the conversation
+    const { error: chatError } = await supabase
+      .from('ai_conversations')
+      .delete()
+      .eq('id', chatId);
+
+    if (chatError) throw chatError;
+
+    // Remove it from the sidebar
+    setConversations((prev) =>
+      prev.filter((chat) => chat.id !== chatId)
+    );
+
+    // If the deleted conversation was open, return to a new chat
+    if (activeChatId === chatId) {
+      handleNewChat();
     }
-    if (q.includes('add an appointment') || q.includes('how do i add')) {
-      return {
-        text: 'To add an appointment, navigate to "My Appointments" and click the "+ Add New Appointment" button at the top right of the page.',
-        actionBtn: { label: 'Add New Appointment', route: '/dashboard/my-appointment' }
-      };
+
+  } catch (error) {
+    console.error('Error deleting conversation:', error.message);
+    window.alert('Unable to delete this conversation. Please try again.');
+  }
+};
+
+ 
+// Send Message to MediTrack AI and save chat history
+const handleSendMessage = async (textToSend) => {
+  const messageText = (textToSend || inputMessage).trim();
+
+  if (!messageText || isTyping) return;
+
+  setInputMessage('');
+  setIsTyping(true);
+
+  try {
+    // Get the logged-in patient's Supabase session
+    const {
+      data: { session },
+      error: sessionError
+    } = await supabase.auth.getSession();
+
+    if (sessionError || !session) {
+      throw new Error('Please log in again to use the AI Assistant.');
     }
-    if (q.includes('manage my reminders') || q.includes('reminder settings') || q.includes('reminders')) {
-      return {
-        text: 'You can easily configure your reminder lead time and toggle channel preferences (In-app, Email, Browser) on the Notifications & Reminders page.',
-        actionBtn: { label: 'Open Reminder Settings', route: '/dashboard/notifications' }
-      };
+
+    let chatId = activeChatId;
+    let chatTitle = messageText.length > 30
+      ? messageText.substring(0, 30) + '...'
+      : messageText;
+
+    // Create a new conversation if this is a new chat
+    if (!chatId) {
+      const { data: newChat, error: createError } = await supabase
+        .from('ai_conversations')
+        .insert({
+          user_id: session.user.id,
+          title: chatTitle
+        })
+        .select()
+        .single();
+
+      if (createError) throw createError;
+
+      chatId = newChat.id;
+      setActiveChatId(chatId);
     }
-    if (q.includes('history') || q.includes('past appointment') || q.includes('where can i find my appointment history')) {
-      return {
-        text: 'Your complete visit history, including completed, missed, and cancelled appointments, is available on the Appointment History page.',
-        actionBtn: { label: 'View Appointment History', route: '/dashboard/history' }
-      };
-    }
 
-    return {
-      text: "I'm currently in demo mode. I'll be able to provide more detailed assistance when the MediTrack AI service is connected."
-    };
-  };
+    const currentTime = new Date().toISOString();
 
-  // Send Message Logic
-  const handleSendMessage = (textToSend) => {
-    const messageText = textToSend || inputMessage;
-    if (!messageText.trim()) return;
+    // Save the patient's message
+    const { data: savedUserMessage, error: userMessageError } =
+      await supabase
+        .from('ai_messages')
+        .insert({
+          conversation_id: chatId,
+          sender: 'user',
+          content: messageText
+        })
+        .select()
+        .single();
 
-    const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    if (userMessageError) throw userMessageError;
 
-    // Append User Message
     const newUserMsg = {
       sender: 'user',
-      text: messageText,
-      time: currentTime
+      text: savedUserMessage.content,
+      time: new Date(savedUserMessage.created_at).toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit'
+      })
     };
 
-    setCurrentMessages((prev) => [...prev, newUserMsg]);
-    setInputMessage('');
-    setIsTyping(true);
+    const messagesAfterUser = [...currentMessages, newUserMsg];
 
-    // Simulate AI response delay
-    setTimeout(() => {
-      const demoReply = getDemoResponse(messageText);
-      const newAssistantMsg = {
-        sender: 'assistant',
-        text: demoReply.text,
-        actionBtn: demoReply.actionBtn,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      };
+    setCurrentMessages(messagesAfterUser);
 
-      setCurrentMessages((prev) => [...prev, newAssistantMsg]);
-      setIsTyping(false);
-    }, 1000);
-  };
+    // Update the conversation's last activity
+    await supabase
+      .from('ai_conversations')
+      .update({ updated_at: currentTime })
+      .eq('id', chatId);
+
+    // Update the conversation list on screen
+    setConversations((prev) => {
+      const existingChat = prev.find((chat) => chat.id === chatId);
+
+      if (existingChat) {
+        return prev.map((chat) =>
+          chat.id === chatId
+            ? {
+                ...chat,
+                messages: messagesAfterUser,
+                time: formatNigeriaDateTime(currentTime)
+              }
+            : chat
+        );
+      }
+
+      return [
+        {
+          id: chatId,
+          title: chatTitle,
+          time: new Date(currentTime).toLocaleString(),
+          messages: messagesAfterUser
+        },
+        ...prev
+      ];
+    });
+
+    // Send the message to the Express backend
+    const response = await fetch(
+      `${import.meta.env.VITE_API_URL}/api/ai/chat`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          message: messageText
+        })
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.message || 'Unable to get an AI response.');
+    }
+
+    // Save Gemini's response
+    const { data: savedAssistantMessage, error: assistantMessageError } =
+      await supabase
+        .from('ai_messages')
+        .insert({
+          conversation_id: chatId,
+          sender: 'assistant',
+          content: result.response
+        })
+        .select()
+        .single();
+
+    if (assistantMessageError) throw assistantMessageError;
+
+    const newAssistantMsg = {
+      sender: 'assistant',
+      text: savedAssistantMessage.content,
+      time: formatNigeriaTime(savedAssistantMessage.created_at)
+    };
+
+    const completedMessages = [...messagesAfterUser, newAssistantMsg];
+
+    setCurrentMessages(completedMessages);
+
+    setConversations((prev) =>
+      prev.map((chat) =>
+        chat.id === chatId
+          ? { ...chat, messages: completedMessages }
+          : chat
+      )
+    );
+
+    // Update conversation activity time
+    await supabase
+      .from('ai_conversations')
+      .update({ updated_at: new Date().toISOString() })
+      .eq('id', chatId);
+
+  } catch (error) {
+    console.error('AI Assistant error:', error);
+
+    const errorMessage = {
+      sender: 'assistant',
+      text: error.message || 'Something went wrong. Please try again.',
+      time: new Date().toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    };
+
+    setCurrentMessages((prev) => [...prev, errorMessage]);
+
+  } finally {
+    setIsTyping(false);
+  }
+};
+
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -231,11 +408,6 @@ export default function AIAssistantPage() {
               Your personal guide to managing appointments and navigating MediTrack.
             </p>
           </div>
-        </div>
-
-        <div className="header-status-badge">
-          <Info size={15} />
-          <span>Demo Mode</span>
         </div>
       </div>
 
@@ -263,24 +435,41 @@ export default function AIAssistantPage() {
             </button>
           </div>
 
-          <div className="conversations-list">
-            {conversations.map((chat) => (
-              <div
-                key={chat.id}
-                onClick={() => handleSelectConversation(chat)}
-                className={`conversation-item ${activeChatId === chat.id ? 'active' : ''}`}
-              >
-                <div className="conv-icon-box">
-                  <MessageSquare size={16} />
-                </div>
-                <div className="conv-info">
-                  <h4>{chat.title}</h4>
-                  <span>{chat.time}</span>
-                </div>
-                <ChevronRight size={16} className="conv-arrow" />
-              </div>
-            ))}
-          </div>
+          
+<div className="conversations-list">
+  {conversations.map((chat) => (
+    <div
+      key={chat.id}
+      onClick={() => handleSelectConversation(chat)}
+      className={`conversation-item ${activeChatId === chat.id ? 'active' : ''}`}
+    >
+      <div className="conv-icon-box">
+        <MessageSquare size={16} />
+      </div>
+
+      <div className="conv-info">
+        <h4>{chat.title}</h4>
+        <span>{chat.time}</span>
+      </div>
+
+      <button
+        type="button"
+        className="conv-delete-btn"
+        title="Delete conversation"
+        aria-label={`Delete conversation: ${chat.title}`}
+        onClick={(e) => {
+          e.stopPropagation();
+          handleDeleteConversation(chat.id);
+        }}
+      >
+        <Trash2 size={15} />
+      </button>
+
+      <ChevronRight size={16} className="conv-arrow" />
+    </div>
+  ))}
+</div>
+
         </aside>
 
         {/* RIGHT PANEL: CHAT WORKSPACE */}
@@ -595,6 +784,45 @@ export default function AIAssistantPage() {
           cursor: pointer;
           transition: all 0.2s ease;
         }
+
+
+.conv-delete-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  padding: 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.conversation-item:hover .conv-delete-btn {
+  opacity: 1;
+}
+
+.conv-delete-btn:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.conv-delete-btn:focus-visible {
+  opacity: 1;
+  outline: 2px solid #0d9488;
+  outline-offset: 2px;
+}
+
+@media (max-width: 768px) {
+  .conv-delete-btn {
+    opacity: 1;
+  }
+}
+
+
         .conversation-item:hover, .conversation-item.active {
           background: #E8F8F5;
           border-color: #A3E2D9;

@@ -19,6 +19,8 @@ import HowItWorksPage from './Pages/how-it-works';
 import ContactPage from './Pages/contact';
 import LoginPage from './Pages/login';
 import GetStartedPage from './Pages/get-started';
+import TermsPage from './Pages/terms';
+import PrivacyPage from './Pages/privacy';
 
 // Patient Dashboard Layout & Sub-Views
 import DashboardLayout from './Pages/Patient/dashboardlayout';
@@ -44,7 +46,8 @@ export default function App() {
               <Route path="/contact" element={<ContactPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/get-started" element={<GetStartedPage />} />
-
+              <Route path="/terms" element={<TermsPage />} />
+              <Route path="/privacy" element={<PrivacyPage />} />
 
               {/* Admin Dashboard Routes */}
               <Route path="/admin" element={<AdminLayout />}>

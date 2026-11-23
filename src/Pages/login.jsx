@@ -195,13 +195,14 @@ const handleSubmit = async (e) => {
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="auth-form" noValidate>
+            <form onSubmit={handleSubmit}className="auth-form" noValidate autoComplete="off">
               
               {/* Email Address Field */}
               <div className="form-group">
                 <label htmlFor="email">Email Address</label>
                 <div className="input-with-icon">
                   <Mail size={18} className="input-prefix-icon" />
+                  
                   <input
                     type="email"
                     id="email"
@@ -209,6 +210,7 @@ const handleSubmit = async (e) => {
                     placeholder="Email Address"
                     value={formData.email}
                     onChange={handleInputChange}
+                    autoComplete="off"
                   />
                 </div>
                 {errors.email && <span className="error-text">{errors.email}</span>}
@@ -226,6 +228,7 @@ const handleSubmit = async (e) => {
                     placeholder="Password"
                     value={formData.password}
                     onChange={handleInputChange}
+                    autoComplete="new-password"
                   />
                   <button
                     type="button"

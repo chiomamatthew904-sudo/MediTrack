@@ -1,8 +1,10 @@
+import 'dotenv/config';
+
 import { requireAdmin } from './middleware/adminAuth.js';
 import express from 'express';
-import dotenv from 'dotenv';
 import cors from 'cors';
 import cron from 'node-cron';
+import rateLimit from 'express-rate-limit';
 
 import { supabase } from './config/supabase.js';
 import {
@@ -10,12 +12,94 @@ import {
   generateDueRemindersForAllPatients
 } from './services/reminderService.js';
 import { markMissedAppointments } from './services/missedappointmentservice.js';
-import { sendEnquiryReply } from './services/emailservice.js';
+import {
+  sendEnquiryReply,
+  sendSupportNotification
+} from './services/emailservice.js';
+import { generateAIResponse } from './services/aiservice.js';
 
-dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 5000;
+
+
+// Authenticate patients before allowing access to the AI Assistant
+const authenticatePatient = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        success: false,
+        message: 'Please log in to use the AI Assistant.'
+      });
+    }
+
+    const accessToken = authHeader.split(' ')[1];
+
+    const {
+      data: { user },
+      error: authError
+    } = await supabase.auth.getUser(accessToken);
+
+    if (authError || !user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Your session is invalid. Please log in again.'
+      });
+    }
+
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (profileError) {
+      console.error('Patient verification error:', profileError.message);
+
+      return res.status(500).json({
+        success: false,
+        message: 'Unable to verify your account permissions.'
+      });
+    }
+
+    if (!profile || profile.role !== 'patient') {
+      return res.status(403).json({
+        success: false,
+        message: 'Only registered patients can use the AI Assistant.'
+      });
+    }
+
+    req.user = user;
+    next();
+
+  } catch (error) {
+    console.error('Patient authentication error:', error.message);
+
+    return res.status(500).json({
+      success: false,
+      message: 'Unable to verify your login session.'
+    });
+  }
+};
+
+
+// Limit each authenticated patient to 10 AI requests per minute
+const aiChatLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 10,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+
+  // Identify each patient by their authenticated user ID
+  keyGenerator: (req) => req.user.id,
+
+  message: {
+    success: false,
+    message: 'You have reached your AI message limit. Please try again in one minute.'
+  }
+});
 
 // Middleware
 app.use(express.json());
@@ -340,8 +424,6 @@ app.patch('/api/admin/enquiries/:id/status', requireAdmin, async (req, res) => {
 });
 
 
-
-
 // Send an email reply and create an in-app notification (Admin only)
 app.post('/api/admin/enquiries/:id/reply', requireAdmin, async (req, res) => {
   try {
@@ -354,6 +436,16 @@ app.post('/api/admin/enquiries/:id/reply', requireAdmin, async (req, res) => {
         message: 'Please enter a reply message.'
       });
     }
+
+
+    // Prevent excessively long messages
+if (message.trim().length > 2000) {
+  return res.status(400).json({
+    success: false,
+    message: 'Your message is too long. Please keep it under 2,000 characters.'
+  });
+}
+
 
     // 1. Retrieve the enquiry, including its patient account ID
     const { data: enquiry, error: fetchError } = await supabase
@@ -423,6 +515,52 @@ app.post('/api/admin/enquiries/:id/reply', requireAdmin, async (req, res) => {
 
 
 
+// AI Assistant chat endpoint
+app.post(
+  '/api/ai/chat',
+  authenticatePatient,
+  aiChatLimiter,
+  async (req, res) => {
+    try {
+      const { message } = req.body;
+
+      // Validate the patient's message
+      if (!message || typeof message !== 'string' || !message.trim()) {
+        return res.status(400).json({
+          success: false,
+          message: 'Please enter a message.'
+        });
+      }
+
+      // Prevent excessively long messages
+      if (message.trim().length > 2000) {
+        return res.status(400).json({
+          success: false,
+          message: 'Your message is too long. Please keep it under 2,000 characters.'
+        });
+      }
+
+      // Generate a response using Google Gemini
+      const aiResponse = await generateAIResponse(message.trim());
+
+      return res.status(200).json({
+        success: true,
+        response: aiResponse
+      });
+
+   } catch (error) {
+  console.error('AI Assistant error:', error.message);
+
+  return res.status(error.statusCode || 500).json({
+    success: false,
+    message: error.publicMessage ||
+      'Unable to generate a response. Please try again.'
+  });
+   }
+  }
+);
+
+
 
  // Receive and save Contact form enquiries
 app.post('/api/contact-enquiries', async (req, res) => {
@@ -478,13 +616,30 @@ if (authHeader?.startsWith('Bearer ')) {
       .select('id, full_name, email, subject, status, created_at, user_id')
       .single();
 
-    if (error) throw error;
+     if (error) throw error;
 
-    return res.status(201).json({
-      success: true,
-      message: 'Your enquiry has been submitted successfully.',
-      enquiry: data
-    });
+// Send a notification to MediTrack Support
+try {
+  await sendSupportNotification({
+    fullName: data.full_name,
+    email: data.email,
+    subject: data.subject,
+    message: message.trim()
+  });
+} catch (emailError) {
+  console.error(
+    'Enquiry saved, but support email notification failed:',
+    emailError.message
+  );
+}
+
+// Return success response
+return res.status(201).json({
+  success: true,
+  message: 'Your enquiry has been submitted successfully.',
+  enquiry: data
+}); 
+   
 
   } catch (error) {
     console.error('Contact enquiry error:', error.message);
