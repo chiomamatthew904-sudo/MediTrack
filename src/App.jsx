@@ -21,6 +21,8 @@ import LoginPage from './Pages/login';
 import GetStartedPage from './Pages/get-started';
 import TermsPage from './Pages/terms';
 import PrivacyPage from './Pages/privacy';
+import ForgotPassword from './Pages/forgot-password';
+import ResetPassword from './Pages/reset-password';
 
 // Patient Dashboard Layout & Sub-Views
 import DashboardLayout from './Pages/Patient/dashboardlayout';
@@ -48,6 +50,8 @@ export default function App() {
               <Route path="/get-started" element={<GetStartedPage />} />
               <Route path="/terms" element={<TermsPage />} />
               <Route path="/privacy" element={<PrivacyPage />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
 
               {/* Admin Dashboard Routes */}
               <Route path="/admin" element={<AdminLayout />}>
