@@ -228,7 +228,7 @@ const handleSubmit = async (e) => {
                     placeholder="Password"
                     value={formData.password}
                     onChange={handleInputChange}
-                    autoComplete="new-password"
+                    autoComplete="current-password"
                   />
                   <button
                     type="button"
