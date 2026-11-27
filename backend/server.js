@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import { Webhook } from 'standardwebhooks';
 
 import { requireAdmin } from './middleware/adminAuth.js';
 import express from 'express';
@@ -13,6 +14,7 @@ import {
 } from './services/reminderService.js';
 import { markMissedAppointments } from './services/missedappointmentservice.js';
 import {
+  sendAuthEmail,
   sendEnquiryReply,
   sendSupportNotification
 } from './services/emailservice.js';
@@ -100,6 +102,140 @@ const aiChatLimiter = rateLimit({
     message: 'You have reached your AI message limit. Please try again in one minute.'
   }
 });
+
+
+
+ // Supabase Authentication Email Hook
+app.post(
+  '/api/auth/send-email',
+  express.raw({ type: 'application/json' }),
+  async (req, res) => {
+    try {
+      const hookSecret = process.env.SEND_EMAIL_HOOK_SECRET;
+
+      if (!hookSecret) {
+        throw new Error('Missing SEND_EMAIL_HOOK_SECRET environment variable.');
+      }
+
+      const payload = req.body.toString('utf8');
+
+      const headers = Object.fromEntries(
+        Object.entries(req.headers).map(([key, value]) => [
+          key,
+          Array.isArray(value) ? value.join(',') : value
+        ])
+      );
+
+      const webhook = new Webhook(
+        hookSecret.replace('v1,whsec_', '')
+      );
+
+      const { user, email_data } = webhook.verify(payload, headers);
+
+      const actionType = email_data.email_action_type;
+
+      // Create a confirmation link when the email action requires one
+      const buildConfirmationUrl = (tokenHash) => {
+        if (!tokenHash) {
+          throw new Error('Missing email verification token hash.');
+        }
+
+        const url = new URL(
+          '/auth/v1/verify',
+          process.env.SUPABASE_URL
+        );
+
+        const params = new URLSearchParams({
+          token: tokenHash,
+          type: actionType
+        });
+
+        if (email_data.redirect_to) {
+          params.set('redirect_to', email_data.redirect_to);
+        }
+
+        url.search = params.toString();
+
+        return url.toString();
+      };
+
+      // Secure Email Change: send to both addresses
+      if (actionType === 'email_change') {
+        if (
+          !user.email ||
+          !user.new_email ||
+          !email_data.token ||
+          !email_data.token_new ||
+          !email_data.token_hash ||
+          !email_data.token_hash_new
+        ) {
+          throw new Error('Missing secure email-change details.');
+        }
+
+        // Send confirmation to the current email address
+        await sendAuthEmail({
+          to: user.email,
+          actionType,
+          confirmationUrl: buildConfirmationUrl(email_data.token_hash_new),
+          token: email_data.token,
+          oldEmail: user.email,
+          newEmail: user.new_email
+        });
+
+        // Send confirmation to the new email address
+        await sendAuthEmail({
+          to: user.new_email,
+          actionType,
+          confirmationUrl: buildConfirmationUrl(email_data.token_hash),
+          token: email_data.token_new,
+          oldEmail: user.email,
+          newEmail: user.new_email
+        });
+
+      } else {
+        if (!user.email) {
+          throw new Error('Missing authentication email recipient.');
+        }
+
+        const isReauthentication = actionType === 'reauthentication';
+        const isNotification = actionType.endsWith('_notification');
+
+        let confirmationUrl;
+
+        if (!isReauthentication && !isNotification) {
+          confirmationUrl = buildConfirmationUrl(email_data.token_hash);
+        }
+
+        await sendAuthEmail({
+          to: user.email,
+          actionType,
+          confirmationUrl,
+          token: email_data.token,
+          oldEmail: email_data.old_email,
+          newEmail: user.new_email,
+          phone: user.phone,
+          oldPhone: email_data.old_phone,
+          provider: email_data.provider,
+          factorType: email_data.factor_type
+        });
+      }
+
+      return res.status(200).json({});
+
+    } catch (error) {
+      console.error('Supabase email hook error:', error.message);
+
+      return res.status(500).json({
+        error: {
+          http_code: 500,
+          message: 'Unable to send authentication email.'
+        }
+      });
+    }
+  }
+);
+
+
 
 // Middleware
 app.use(express.json());
