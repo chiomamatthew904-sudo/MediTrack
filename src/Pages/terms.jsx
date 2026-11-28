@@ -309,7 +309,7 @@ export default function TermsPage() {
               <p>
                 If you have questions, feedback, or concerns regarding these Terms of Service or your MediTrack account, please contact our support team at:{' '}
                 <a href="mailto:meditracksupport@gmail.com" className="terms-inline-link">
-                  meditracksupport@gmail.com
+                  meditracksuppoort@gmail.com
                 </a>
                 .
               </p>

@@ -257,7 +257,7 @@ export default function PrivacyPage() {
               </div>
               <div className="privacy-contact-details">
                 <a href="mailto:meditracksupport@gmail.com" className="privacy-email-link">
-                  meditracksupport@gmail.com
+                  meditracksuppoort@gmail.com
                 </a>
                 <span>We're here to help. Feel free to reach out anytime.</span>
               </div>
