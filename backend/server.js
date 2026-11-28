@@ -8,17 +8,11 @@ import cron from 'node-cron';
 import rateLimit from 'express-rate-limit';
 
 import { supabase } from './config/supabase.js';
-import {
-  generateDueReminders,
-  generateDueRemindersForAllPatients
-} from './services/reminderService.js';
+import { generateDueReminders, generateDueRemindersForAllPatients} from './services/reminderService.js';
 import { markMissedAppointments } from './services/missedappointmentservice.js';
-import {
-  sendAuthEmail,
-  sendEnquiryReply,
-  sendSupportNotification
-} from './services/emailservice.js';
+import { sendEnquiryReply, sendSupportNotification} from './services/emailservice.js';
 import { generateAIResponse } from './services/aiservice.js';
+import { processAuthEmailQueue } from './services/authEmailQueueService.js';
 
 
 const app = express();
@@ -132,93 +126,22 @@ app.post(
 
       const { user, email_data } = webhook.verify(payload, headers);
 
-      const actionType = email_data.email_action_type;
-
-      // Create a confirmation link when the email action requires one
-      const buildConfirmationUrl = (tokenHash) => {
-        if (!tokenHash) {
-          throw new Error('Missing email verification token hash.');
+      
+      // Save the authentication email request to the queue
+      const { error: queueError } = await supabase
+       .from('auth_email_queue')
+       .insert({
+         payload: {
+         user,
+         email_data
         }
+     });
 
-        const url = new URL(
-          '/auth/v1/verify',
-          process.env.SUPABASE_URL
-        );
+       if (queueError) {
+       throw queueError;
+     }
 
-        const params = new URLSearchParams({
-          token: tokenHash,
-          type: actionType
-        });
-
-        if (email_data.redirect_to) {
-          params.set('redirect_to', email_data.redirect_to);
-        }
-
-        url.search = params.toString();
-
-        return url.toString();
-      };
-
-      // Secure Email Change: send to both addresses
-      if (actionType === 'email_change') {
-        if (
-          !user.email ||
-          !user.new_email ||
-          !email_data.token ||
-          !email_data.token_new ||
-          !email_data.token_hash ||
-          !email_data.token_hash_new
-        ) {
-          throw new Error('Missing secure email-change details.');
-        }
-
-        // Send confirmation to the current email address
-        await sendAuthEmail({
-          to: user.email,
-          actionType,
-          confirmationUrl: buildConfirmationUrl(email_data.token_hash_new),
-          token: email_data.token,
-          oldEmail: user.email,
-          newEmail: user.new_email
-        });
-
-        // Send confirmation to the new email address
-        await sendAuthEmail({
-          to: user.new_email,
-          actionType,
-          confirmationUrl: buildConfirmationUrl(email_data.token_hash),
-          token: email_data.token_new,
-          oldEmail: user.email,
-          newEmail: user.new_email
-        });
-
-      } else {
-        if (!user.email) {
-          throw new Error('Missing authentication email recipient.');
-        }
-
-        const isReauthentication = actionType === 'reauthentication';
-        const isNotification = actionType.endsWith('_notification');
-
-        let confirmationUrl;
-
-        if (!isReauthentication && !isNotification) {
-          confirmationUrl = buildConfirmationUrl(email_data.token_hash);
-        }
-
-        await sendAuthEmail({
-          to: user.email,
-          actionType,
-          confirmationUrl,
-          token: email_data.token,
-          oldEmail: email_data.old_email,
-          newEmail: user.new_email,
-          phone: user.phone,
-          oldPhone: email_data.old_phone,
-          provider: email_data.provider,
-          factorType: email_data.factor_type
-        });
-      }
+       console.log('Authentication email added to queue successfully.');
 
       return res.status(200).json({});
 
@@ -244,7 +167,7 @@ app.use(cors({
   origin: [
     'http://localhost:5173',
     'http://localhost:5174',
-    'https://medi-track-gamma-lyart.vercel.app'
+    'https://medi-track-joan11.vercel.app'
   ],
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -796,7 +719,7 @@ app.post('/api/reminders/check', async (req, res) => {
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({
         success: false,
-        message: 'Auconst auththentication required.'
+        message: 'Authentication required.'
       });
     }
 
@@ -877,6 +800,19 @@ cron.schedule(
 );
 
 console.log('MediTrack missed appointment scheduler configured for every 15 minutes.');
+
+
+// Process authentication email queue every minute
+cron.schedule('* * * * *', async () => {
+  console.log('Checking authentication email queue...');
+
+  try {
+    await processAuthEmailQueue();
+  } catch (error) {
+    console.error('Authentication email queue error:', error.message);
+  }
+});
+
 
 // Start Express server
 app.listen(port, () => {
